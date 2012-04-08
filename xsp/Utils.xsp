@@ -1,0 +1,47 @@
+%module{Boost::Geometry::Utils};
+%package{Boost::Geometry::Utils};
+
+%{
+#include <myinit.h>
+
+PROTOTYPES: DISABLE
+
+polygon*
+_read_wkt_polygon(wkt)
+    std::string& wkt
+  CODE:
+    RETVAL = new polygon ();
+    boost::geometry::read_wkt(wkt, *RETVAL);
+  OUTPUT:
+    RETVAL
+
+linestring*
+_read_wkt_linestring(wkt)
+    std::string& wkt
+  CODE:
+    RETVAL = new linestring ();
+    boost::geometry::read_wkt(wkt, *RETVAL);
+  OUTPUT:
+    RETVAL
+
+multilinestring*
+_polygon_linestring_intersection(my_polygon, my_linestring)
+    polygon* my_polygon
+    linestring* my_linestring
+  CODE:
+    RETVAL = new multilinestring ();
+    boost::geometry::intersection(*my_polygon, *my_linestring, *RETVAL);
+  OUTPUT:
+    RETVAL
+
+std::string
+_multilinestring_to_wkt(mls)
+    multilinestring* mls
+  CODE:
+    std::ostringstream output;
+    output << boost::geometry::wkt(*mls);
+    RETVAL = output.str();
+  OUTPUT:
+    RETVAL
+
+%}

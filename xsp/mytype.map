@@ -1,0 +1,3 @@
+polygon*	T_PTROBJ
+linestring*	T_PTROBJ
+multilinestring*	T_PTROBJ
