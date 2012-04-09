@@ -15,11 +15,11 @@ _read_wkt_polygon(wkt)
   OUTPUT:
     RETVAL
 
-linestring*
+multilinestring*
 _read_wkt_linestring(wkt)
     std::string& wkt
   CODE:
-    RETVAL = new linestring ();
+    RETVAL = new multilinestring ();
     boost::geometry::read_wkt(wkt, *RETVAL);
   OUTPUT:
     RETVAL
@@ -27,7 +27,7 @@ _read_wkt_linestring(wkt)
 multilinestring*
 _polygon_linestring_intersection(my_polygon, my_linestring)
     polygon* my_polygon
-    linestring* my_linestring
+    multilinestring* my_linestring
   CODE:
     RETVAL = new multilinestring ();
     boost::geometry::intersection(*my_polygon, *my_linestring, *RETVAL);

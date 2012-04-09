@@ -22,7 +22,7 @@ sub polygon_to_wkt {
 }
 
 sub linestring_to_wkt {
-    sprintf 'LINESTRING(%s)', join ',', map { join ' ', @$_ } @{$_[0]};
+    sprintf "MULTILINESTRING(%s)", join ',', map { sprintf '(%s)', join ',', map { join ' ', @$_ } @$_ } @_;
 }
 
 sub wkt_to_multilinestring {

@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 2;
+use Test::More tests => 3;
 use Boost::Geometry::Utils qw(polygon linestring polygon_linestring_intersection);
 
 {
@@ -22,6 +22,7 @@ use Boost::Geometry::Utils qw(polygon linestring polygon_linestring_intersection
     my $polygon = polygon($square, $hole_in_square);
     my $linestring = linestring([ [5, 15], [30, 15] ]);
     my $linestring2 = linestring([ [40, 15], [50, 15] ]);  # external
+    my $multilinestring = linestring([ [5, 15], [30, 15] ], [ [40, 15], [50, 15] ]);
     
     {
         my $intersection = polygon_linestring_intersection($polygon, $linestring);
@@ -33,6 +34,13 @@ use Boost::Geometry::Utils qw(polygon linestring polygon_linestring_intersection
     {
         my $intersection = polygon_linestring_intersection($polygon, $linestring2);
         is_deeply $intersection, [], 'external line produces no intersections';
+    }
+    {
+        my $intersection = polygon_linestring_intersection($polygon, $multilinestring);
+        is_deeply $intersection, [
+            [ [10, 15], [14, 15] ],
+            [ [16, 15], [20, 15] ],
+        ], 'multiple linestring clipping';
     }
 }
 
