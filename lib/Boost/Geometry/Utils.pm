@@ -5,12 +5,9 @@ use warnings;
 
 require Exporter;
 our @ISA = qw(Exporter);
-our $VERSION;
 
-BEGIN {
-    use XSLoader;
-    XSLoader::load('Boost::Geometry::Utils', $VERSION);
-}
+use XSLoader;
+XSLoader::load('Boost::Geometry::Utils', $Boost::Geometry::Utils::VERSION);
 
 our @EXPORT_OK = qw(polygon_to_wkt linestring_to_wkt wkt_to_multilinestring
     polygon linestring
