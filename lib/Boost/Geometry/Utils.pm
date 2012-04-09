@@ -82,6 +82,8 @@ free. I'm unsure about the optimal architectural for providing full
 bindings, but I'm interested in such a project -- so, if you have ideas
 please get in touch with me.
 
+B<Warning:> the API could change in the future.
+
 =head1 METHODS
 
 =head2 polygon
@@ -100,5 +102,18 @@ Performs an intersection between the supplied polygon and linestring,
 and returns an arrayref of linestrings (represented as arrayrefs of
 points).
 Note that such an intersection is also called I<clipping>.
+
+=head2 polygon_to_wkt
+
+Converts one or more arrayref(s) of points to a WKT representation of
+a polygon (with holes).
+
+=head2 linestring_to_wkt
+
+Converts an arrayref of points to a WKT representation of a multilinestring.
+
+=head2 wkt_to_multilinestring
+
+Parses a MULTILINESTRING back to a Perl data structure.
 
 =cut
