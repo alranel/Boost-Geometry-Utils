@@ -116,4 +116,9 @@ Converts an arrayref of points to a WKT representation of a multilinestring.
 
 Parses a MULTILINESTRING back to a Perl data structure.
 
+=head1 ACKNOWLEDGEMENTS
+
+Thanks to mauke and mst (Matt S. Trout (cpan:MSTROUT) <mst@shadowcat.co.uk>)
+for their valuable help in getting this to compile under Windows (MinGW) too.
+
 =cut

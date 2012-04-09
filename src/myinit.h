@@ -1,3 +1,11 @@
+#undef read
+#undef bind
+#undef times
+#undef open
+#undef seekdir
+#undef setbuf
+#undef abort
+#undef close
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/geometries/polygon.hpp>
