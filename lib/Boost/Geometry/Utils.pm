@@ -9,7 +9,6 @@ our $VERSION;
 
 BEGIN {
     use XSLoader;
-    $VERSION = '0.01';
     XSLoader::load('Boost::Geometry::Utils', $VERSION);
 }
 
