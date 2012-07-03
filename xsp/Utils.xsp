@@ -6,7 +6,7 @@
 
 PROTOTYPES: DISABLE
 
-polygon*
+opolygon*
 _read_wkt_polygon(wkt)
     std::string& wkt
   CODE:

@@ -1,3 +1,48 @@
-polygon*	T_PTROBJ
+opolygon*	T_PTROBJ
 linestring*	T_PTROBJ
 multilinestring*	T_PTROBJ
+
+polygon			T_VECTOR_POINT
+polygon*        T_VECTOR_POINT_PTR
+
+INPUT
+T_VECTOR_POINT
+	if (SvROK($arg) && SvTYPE(SvRV($arg))==SVt_PVAV) {
+	  $type* tmp = perl2polygon(aTHX_ (AV*)SvRV($arg));
+	  if (tmp == NULL) {
+	    Perl_croak(aTHX_ \"%s: %s is not an array reference or contains invalid data\",
+	               ${$ALIAS?\q[GvNAME(CvGV(cv))]:\qq[\"$pname\"]},
+	               \"$var\");
+	  }
+	  else {
+	    $var = *tmp;
+	    delete tmp;
+	  }
+	}
+	else
+	  Perl_croak(aTHX_ \"%s: %s is not an array reference\",
+	             ${$ALIAS?\q[GvNAME(CvGV(cv))]:\qq[\"$pname\"]},
+	             \"$var\");
+
+T_VECTOR_POINT_PTR
+	if (SvROK($arg) && SvTYPE(SvRV($arg))==SVt_PVAV) {
+	  $var = perl2polygon(aTHX_ (AV*)SvRV($arg));
+	  if (($var) == NULL) {
+	    Perl_croak(aTHX_ \"%s: %s is not an array reference or contains invalid data\",
+	               ${$ALIAS?\q[GvNAME(CvGV(cv))]:\qq[\"$pname\"]},
+	               \"$var\");
+	  }
+	}
+	else
+	  Perl_croak(aTHX_ \"%s: %s is not an array reference\",
+	             ${$ALIAS?\q[GvNAME(CvGV(cv))]:\qq[\"$pname\"]},
+	             \"$var\");
+
+OUTPUT
+
+T_VECTOR_POINT
+	$arg = polygon2perl(aTHX_ $var);
+
+T_VECTOR_POINT_PTR
+	$arg = polygon2perl(aTHX_ *$var);
+	delete $var;
