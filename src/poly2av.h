@@ -59,7 +59,7 @@ void add_hole(AV* theAv, polygon* poly)
     // if Perl integers are 64 bit, use SvIV()
     // this library then supports 64 bit ints.
 fprintf(stderr, "AH1: %lf %lf\n", SvIV(*av_fetch(innerav, 0, 0)), SvIV(*av_fetch(innerav, 1, 0)));
- append(inner,make<point_xy>(SvIV(*av_fetch(innerav, 0, 0)), SvIV(*av_fetch(innerav, 1, 0))));
+    append(inner,make<point_xy>(SvIV(*av_fetch(innerav, 0, 0)), SvIV(*av_fetch(innerav, 1, 0))));
 #else
     // otherwise coerce the Perl scalar to a double, with SvNV()
     // Perl doubles commonly allow 53 bits for the mantissa.
@@ -97,7 +97,7 @@ polygon* add_outer(AV* theAv)
     // if Perl integers are 64 bit, use SvIV()
     // this library then supports 64 bit ints.
 fprintf(stderr, "Append1: %lf %lf\n", SvIV(*av_fetch(innerav, 0, 0)), SvIV(*av_fetch(innerav, 1, 0)));
- append(outer,make<point_xy>(SvIV(*av_fetch(innerav, 0, 0)), SvIV(*av_fetch(innerav, 1, 0))));
+    append(outer,make<point_xy>(SvIV(*av_fetch(innerav, 0, 0)), SvIV(*av_fetch(innerav, 1, 0))));
 #else
     // otherwise coerce the Perl scalar to a double, with SvNV()
     // Perl doubles commonly allow 53 bits for the mantissa.
@@ -140,10 +140,8 @@ perl2polygon(pTHX_ AV* theAv)
     innerav = (AV*)SvRV(*elem);
     add_hole(innerav, retval);
   }
-fprintf(stderr, "Worked\n");
+  //correct(*retval);
 std::cerr << "poly : " << boost::geometry::dsv(*retval) << std::endl;
-  correct(*retval);
-std::cerr << "cpoly: " << boost::geometry::dsv(*retval) << std::endl;
   return retval;
 }
 
