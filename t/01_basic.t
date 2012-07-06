@@ -19,13 +19,14 @@ use Boost::Geometry::Utils qw(polygon linestring polygon_linestring_intersection
         [16, 16],
         [16, 14],
     ];
-    my $polygon = polygon($square, $hole_in_square);
+    my $polygon = [$square, $hole_in_square];
     my $linestring = linestring([ [5, 15], [30, 15] ]);
     my $linestring2 = linestring([ [40, 15], [50, 15] ]);  # external
     my $multilinestring = linestring([ [5, 15], [30, 15] ], [ [40, 15], [50, 15] ]);
     
     {
         my $intersection = polygon_linestring_intersection($polygon, $linestring);
+use Data::Dumper; print STDERR Data::Dumper->Dump([$intersection],[qw/i1/]);
         is_deeply $intersection, [
             [ [10, 15], [14, 15] ],
             [ [16, 15], [20, 15] ],
@@ -33,10 +34,12 @@ use Boost::Geometry::Utils qw(polygon linestring polygon_linestring_intersection
     }
     {
         my $intersection = polygon_linestring_intersection($polygon, $linestring2);
+use Data::Dumper; print STDERR Data::Dumper->Dump([$intersection],[qw/i2/]);
         is_deeply $intersection, [], 'external line produces no intersections';
     }
     {
         my $intersection = polygon_linestring_intersection($polygon, $multilinestring);
+use Data::Dumper; print STDERR Data::Dumper->Dump([$intersection],[qw/i3/]);
         is_deeply $intersection, [
             [ [10, 15], [14, 15] ],
             [ [16, 15], [20, 15] ],
