@@ -23,7 +23,7 @@ fprintf(stderr, "Return: len=%d\n", len);
   return (SV*)newRV_noinc((SV*)av);
 }
 
-void add_hole(AV* theAv, polygon* poly)
+int add_ring(AV* theAv, ring& theRing)
 {
     using boost::geometry::append;
     using boost::geometry::make;
@@ -31,45 +31,18 @@ void add_hole(AV* theAv, polygon* poly)
   const unsigned int len = av_len(theAv)+1;
   SV** elem;
   AV* innerav;
-  poly->inners().resize(1);
-  ring& inner = poly->inners().back();
   for (unsigned int i = 0; i < len; i++) {
     elem = av_fetch(theAv, i, 0);
     if (!SvROK(*elem)
         || SvTYPE(SvRV(*elem)) != SVt_PVAV
         || av_len((AV*)SvRV(*elem)) < 1)
     {
-      return;
+      return 0;
     }
     innerav = (AV*)SvRV(*elem);
-    append(inner, av_fetch_point_xy(innerav));
+    append(theRing, av_fetch_point_xy(innerav));
   }
-}
-
-polygon* add_outer(AV* theAv)
-{
-    using boost::geometry::append;
-    using boost::geometry::make;
-    using boost::geometry::exterior_ring;
-
-  const unsigned int len = av_len(theAv)+1;
-  SV** elem;
-  AV* innerav;
-  polygon* retval = new polygon();
-  ring& outer = retval->outer();
-  for (unsigned int i = 0; i < len; i++) {
-    elem = av_fetch(theAv, i, 0);
-    if (!SvROK(*elem)
-        || SvTYPE(SvRV(*elem)) != SVt_PVAV
-        || av_len((AV*)SvRV(*elem)) < 1)
-    {
-      delete retval;
-      return NULL;
-    }
-    innerav = (AV*)SvRV(*elem);
-    append(outer, av_fetch_point_xy(innerav));
-  }
-  return retval;
+  return 1;
 }
 
 polygon*
@@ -86,9 +59,12 @@ perl2polygon(pTHX_ AV* theAv)
       || av_len((AV*)SvRV(*elem)) < 1) {
     return NULL;
   }
-  polygon* retval = add_outer((AV*)SvRV(*elem));
-  if (retval == NULL)
+  polygon* retval = new polygon();
+  ring& outer = retval->outer();
+  if (!add_ring((AV*)SvRV(*elem), outer)) {
+    delete retval;
     return NULL;
+  }
   
   for (unsigned int i = 1; i < len; i++) {
     elem = av_fetch(theAv, i, 0);
@@ -100,7 +76,12 @@ perl2polygon(pTHX_ AV* theAv)
       return NULL;
     }
     innerav = (AV*)SvRV(*elem);
-    add_hole(innerav, retval);
+    retval->inners().resize(1);
+    ring& inner = retval->inners().back();
+    if (!add_ring(innerav, inner)) {
+      delete retval;
+      return NULL;
+    }
   }
   //correct(*retval);
   return retval;
