@@ -10,8 +10,8 @@ use XSLoader;
 XSLoader::load('Boost::Geometry::Utils', $Boost::Geometry::Utils::VERSION);
 
 our @EXPORT_OK = qw(polygon_to_wkt linestring_to_wkt wkt_to_multilinestring
-    polygon linestring
-    polygon_linestring_intersection);
+    polygon linestring polygon_linestring_intersection
+    polygon_multi_linestring_intersection);
 
 sub polygon_to_wkt {
     sprintf 'POLYGON(%s)', join ',', map { sprintf '(%s)', join ',', map { join ' ', @$_ } @$_ } @_;
@@ -34,10 +34,6 @@ sub polygon {
 
 sub linestring {
     _read_wkt_linestring(linestring_to_wkt(@_));
-}
-
-sub polygon_linestring_intersection {
-    _polygon_linestring_intersection(@_);
 }
 
 1;

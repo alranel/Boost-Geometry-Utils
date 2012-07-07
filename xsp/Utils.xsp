@@ -25,9 +25,9 @@ _read_wkt_linestring(wkt)
     RETVAL
 
 multi_linestring*
-_polygon_linestring_intersection(my_polygon, my_linestring)
-    polygon* my_polygon
-    multi_linestring* my_linestring
+polygon_linestring_intersection(my_polygon, my_linestring)
+    opolygon* my_polygon
+    omultilinestring* my_linestring
   CODE:
     RETVAL = new multi_linestring ();
     boost::geometry::intersection(*my_polygon, *my_linestring, *RETVAL);
@@ -41,6 +41,16 @@ _multilinestring_to_wkt(mls)
     std::ostringstream output;
     output << boost::geometry::wkt(*mls);
     RETVAL = output.str();
+  OUTPUT:
+    RETVAL
+
+multi_linestring*
+polygon_multi_linestring_intersection(my_polygon, my_linestring)
+    polygon* my_polygon
+    multi_linestring* my_linestring
+  CODE:
+    RETVAL = new multi_linestring ();
+    boost::geometry::intersection(*my_polygon, *my_linestring, *RETVAL);
   OUTPUT:
     RETVAL
 

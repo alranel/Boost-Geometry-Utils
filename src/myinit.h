@@ -20,8 +20,10 @@ typedef boost::geometry::model::linestring<point_xy> linestring;
 typedef boost::geometry::model::multi_linestring<linestring> multi_linestring;
 typedef boost::geometry::model::ring<point_xy,false,false> ring;
 
+// Support old API
 typedef boost::geometry::model::polygon<point_xy,false,false> opolygon;
 typedef boost::geometry::model::multi_linestring<linestring> omultilinestring;
+
 
 // IVSIZE is from perl/lib/CORE/config.h, defined as sizeof(IV)
 #if 0 && IVSIZE >= 8
