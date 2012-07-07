@@ -36,7 +36,7 @@ typedef boost::geometry::model::multi_linestring<linestring> omultilinestring;
 #define av_fetch_y(AV) SvIV(*av_fetch(AV, 1, 0))
 
 // for av_store, use newSViv()
-#define av_store_point_xy(AV, X, Y)             \
+#define av_store_point_xy(AV, X, Y)              \
   av_store(AV, 0, newSViv(X));                   \
   av_store(AV, 1, newSViv(Y))
 #else
