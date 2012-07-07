@@ -26,7 +26,7 @@ typedef boost::geometry::model::multi_linestring<linestring> omultilinestring;
 
 
 // IVSIZE is from perl/lib/CORE/config.h, defined as sizeof(IV)
-#if 0 && IVSIZE >= 8
+#if IVSIZE >= 8
 
 // if Perl integers are 64 bit:
 
