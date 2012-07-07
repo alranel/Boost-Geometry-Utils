@@ -54,4 +54,23 @@ polygon_multi_linestring_intersection(my_polygon, my_linestring)
   OUTPUT:
     RETVAL
 
+int
+point_within_polygon(my_point_xy, my_polygon)
+    point_xy* my_point_xy
+    polygon* my_polygon
+  CODE:
+    RETVAL = boost::geometry::within(*my_point_xy, *my_polygon);
+  OUTPUT:
+    RETVAL
+
+linestring*
+linestring_simplify(my_linestring, tolerance)
+    linestring* my_linestring
+    const double tolerance
+  CODE:
+    RETVAL = new linestring ();
+    boost::geometry::simplify(*my_linestring, *RETVAL, tolerance);
+  OUTPUT:
+    RETVAL
+
 %}

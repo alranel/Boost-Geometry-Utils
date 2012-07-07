@@ -3,8 +3,10 @@
 use strict;
 use warnings;
 
-use Test::More tests => 3;
-use Boost::Geometry::Utils qw(polygon_multi_linestring_intersection);
+use Test::More tests => 8;
+use Boost::Geometry::Utils qw(polygon_multi_linestring_intersection
+                              point_within_polygon
+                              linestring_simplify);
 
 {
     my $square = [  # ccw
@@ -44,6 +46,26 @@ use Boost::Geometry::Utils qw(polygon_multi_linestring_intersection);
             [ [10, 15], [14, 15] ],
             [ [16, 15], [20, 15] ],
         ], 'multiple linestring clipping';
+    }
+
+    {
+        my $point_in = [11,11];
+        my $point_out = [8,8];
+        my $point_in_hole = [15,15];
+        ok point_within_polygon($point_in, $polygon), 'point in polygon';
+        ok !point_within_polygon($point_out, $polygon), 'point outside polygon';
+        ok !point_within_polygon($point_in_hole, $polygon),
+            'point in hole in polygon';
+        my $hole = [$hole_in_square];
+        ok point_within_polygon($point_in_hole, $hole), 'point in hole';
+    }
+
+    {
+        my $line = [[1.1, 1.1], [2.5, 2.1], [3.1, 3.1], [4.9, 1.1], [3.1, 1.9]];
+        my $simplified = linestring_simplify($line, 0.5);
+        is_deeply $simplified,
+            [ [1.1, 1.1], [3.1, 3.1], [4.9, 1.1], [3.1, 1.9] ],
+            'linestring simplification';
     }
 }
 

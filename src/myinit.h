@@ -26,7 +26,7 @@ typedef boost::geometry::model::multi_linestring<linestring> omultilinestring;
 
 
 // IVSIZE is from perl/lib/CORE/config.h, defined as sizeof(IV)
-#if IVSIZE >= 8
+#if 0 && IVSIZE >= 8
 
 // if Perl integers are 64 bit:
 
@@ -61,3 +61,5 @@ typedef boost::geometry::model::multi_linestring<linestring> omultilinestring;
 
 #include "poly2av.h"
 #include "mline2av.h"
+#include "point2av.h"
+#include "line2av.h"
