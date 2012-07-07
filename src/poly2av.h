@@ -18,19 +18,7 @@ fprintf(stderr, "Return: len=%d\n", len);
     innerav = newAV();
     av_store(av, i, newRV_noinc((SV*)innerav));
     av_fill(innerav, 1);
-    // IVSIZE is from perl/lib/CORE/config.h, defined as sizeof(IV)
-fprintf(stderr, "Returning: %lf %lf\n", poly.outer()[i].x(), poly.outer()[i].x());
-#if 0 && IVSIZE >= 8
-    // if Perl integers are 64 bit, use newSViv()
-    av_store(innerav, 0, newSViv(poly.outer()[i].x()));
-    av_store(innerav, 1, newSViv(poly.outer()[i].y()));
-#else
-    // otherwise we expect Clipper integers to fit in the
-	// 53 bit mantissa of a Perl double
-    av_store(innerav, 0, newSVnv(poly.outer()[i].x()));
-    av_store(innerav, 1, newSVnv(poly.outer()[i].y()));
-#endif
-
+    av_store_point_xy(innerav, poly.outer()[i].x(), poly.outer()[i].y());
   }
   return (SV*)newRV_noinc((SV*)av);
 }
@@ -54,20 +42,7 @@ void add_hole(AV* theAv, polygon* poly)
       return;
     }
     innerav = (AV*)SvRV(*elem);
-    // IVSIZE is from perl/lib/CORE/config.h, defined as sizeof(IV)
-#if 0 && IVSIZE >= 8
-    // if Perl integers are 64 bit, use SvIV()
-    // this library then supports 64 bit ints.
-fprintf(stderr, "AH1: %lf %lf\n", SvIV(*av_fetch(innerav, 0, 0)), SvIV(*av_fetch(innerav, 1, 0)));
-    append(inner,make<point_xy>(SvIV(*av_fetch(innerav, 0, 0)), SvIV(*av_fetch(innerav, 1, 0))));
-#else
-    // otherwise coerce the Perl scalar to a double, with SvNV()
-    // Perl doubles commonly allow 53 bits for the mantissa.
-    // So in the common case, this library supports 53 bit integers, stored in doubles on the Perl side.
-fprintf(stderr, "AH2: %lf %lf\n", SvNV(*av_fetch(innerav, 0, 0)), SvNV(*av_fetch(innerav, 1, 0)));
-    append(inner,make<point_xy>(SvNV(*av_fetch(innerav, 0, 0)), SvNV(*av_fetch(innerav, 1, 0))));
-#endif
-std::cerr << "inner : " << boost::geometry::dsv(inner) << std::endl;
+    append(inner, av_fetch_point_xy(innerav));
   }
 }
 
@@ -92,21 +67,8 @@ polygon* add_outer(AV* theAv)
       return NULL;
     }
     innerav = (AV*)SvRV(*elem);
-    // IVSIZE is from perl/lib/CORE/config.h, defined as sizeof(IV)
-#if 0 && IVSIZE >= 8
-    // if Perl integers are 64 bit, use SvIV()
-    // this library then supports 64 bit ints.
-fprintf(stderr, "Append1: %lf %lf\n", SvIV(*av_fetch(innerav, 0, 0)), SvIV(*av_fetch(innerav, 1, 0)));
-    append(outer,make<point_xy>(SvIV(*av_fetch(innerav, 0, 0)), SvIV(*av_fetch(innerav, 1, 0))));
-#else
-    // otherwise coerce the Perl scalar to a double, with SvNV()
-    // Perl doubles commonly allow 53 bits for the mantissa.
-    // So in the common case, this library supports 53 bit integers, stored in doubles on the Perl side.
-fprintf(stderr, "Append2: %lf %lf\n", SvNV(*av_fetch(innerav, 0, 0)), SvNV(*av_fetch(innerav, 1, 0)));
-    append(outer,make<point_xy>(SvNV(*av_fetch(innerav, 0, 0)), SvNV(*av_fetch(innerav, 1, 0))));
-#endif
+    append(outer, av_fetch_point_xy(innerav));
   }
-std::cerr << "outer : " << boost::geometry::dsv(*retval) << std::endl;
   return retval;
 }
 
@@ -141,7 +103,6 @@ perl2polygon(pTHX_ AV* theAv)
     add_hole(innerav, retval);
   }
   //correct(*retval);
-std::cerr << "poly : " << boost::geometry::dsv(*retval) << std::endl;
   return retval;
 }
 
