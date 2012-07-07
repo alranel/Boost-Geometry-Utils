@@ -57,7 +57,7 @@ typedef boost::geometry::model::multi_linestring<linestring> omultilinestring;
 #endif
 
 #define av_fetch_point_xy(AV)                                   \
-  make<point_xy>(av_fetch_x(innerav), av_fetch_y(innerav))
+  make<point_xy>(av_fetch_x(AV), av_fetch_y(AV))
 
 #include "poly2av.h"
 #include "mline2av.h"
