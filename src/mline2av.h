@@ -9,6 +9,36 @@ SV*
 multi_linestring2perl(pTHX_ const multi_linestring& mls)
 {
   AV* av = newAV();
+  std::cerr << "mls> " << boost::geometry::dsv(mls) << std::endl;
+  const unsigned int size = mls.size();
+  av_extend(av, size-1);
+fprintf(stderr, "mls> size=%d\n", size);
+
+  for (int i = 0; i < size; i++) {
+    AV* lineav = newAV();
+    linestring ls = mls[i];
+    av_store(av, i, newRV_noinc((SV*)lineav));
+    av_fill(lineav, 1);
+    std::cerr << " ls> " << boost::geometry::dsv(ls) << std::endl;
+    const unsigned int line_len = boost::geometry::num_points(ls);
+    for (int j = 0; j < line_len; j++) {
+      AV* pointav = newAV();
+      av_store(lineav, j, newRV_noinc((SV*)pointav));
+      av_fill(pointav, 1);
+      std::cerr << "  p> " << ls[j].x() << ":" << ls[j].y() << std::endl;;
+#if 0 && IVSIZE >= 8
+    // if Perl integers are 64 bit, use newSViv()
+    av_store(pointav, 0, newSViv(ls[j].x()));
+    av_store(pointav, 1, newSViv(ls[j].y()));
+#else
+    // otherwise we expect Clipper integers to fit in the
+	// 53 bit mantissa of a Perl double
+    av_store(pointav, 0, newSVnv(ls[j].x()));
+    av_store(pointav, 1, newSVnv(ls[j].y()));
+#endif
+    }
+  }
+    
   return (SV*)newRV_noinc((SV*)av);
 }
 
@@ -43,7 +73,7 @@ fprintf(stderr, "ALS1: %lf %lf\n", SvIV(*av_fetch(innerav, 0, 0)), SvIV(*av_fetc
 fprintf(stderr, "ALS2: %lf %lf\n", SvNV(*av_fetch(innerav, 0, 0)), SvNV(*av_fetch(innerav, 1, 0)));
     ls->push_back(make<point_xy>(SvNV(*av_fetch(innerav, 0, 0)), SvNV(*av_fetch(innerav, 1, 0))));
 #endif
-    std::cerr << "ls : " << boost::geometry::dsv(*ls) << std::endl;
+    std::cerr << "ls: " << boost::geometry::dsv(*ls) << std::endl;
   }
   mls->push_back(*ls);
 }

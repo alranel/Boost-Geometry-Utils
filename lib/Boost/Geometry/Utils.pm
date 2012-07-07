@@ -37,7 +37,7 @@ sub linestring {
 }
 
 sub polygon_linestring_intersection {
-    wkt_to_multilinestring(_multilinestring_to_wkt(_polygon_linestring_intersection(@_)));
+    _polygon_linestring_intersection(@_);
 }
 
 1;

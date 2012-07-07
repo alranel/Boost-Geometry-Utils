@@ -24,7 +24,7 @@ _read_wkt_linestring(wkt)
   OUTPUT:
     RETVAL
 
-omultilinestring*
+multi_linestring*
 _polygon_linestring_intersection(my_polygon, my_linestring)
     polygon* my_polygon
     multi_linestring* my_linestring
