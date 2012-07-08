@@ -51,6 +51,8 @@ polygon_multi_linestring_intersection(my_polygon, my_linestring)
   CODE:
     RETVAL = new multi_linestring ();
     boost::geometry::intersection(*my_polygon, *my_linestring, *RETVAL);
+    delete my_polygon; // TODO: not sure if this is best place for this
+    delete my_linestring; // TODO: not sure if this is best place for this
   OUTPUT:
     RETVAL
 
@@ -60,6 +62,8 @@ point_within_polygon(my_point_xy, my_polygon)
     polygon* my_polygon
   CODE:
     RETVAL = boost::geometry::within(*my_point_xy, *my_polygon);
+    delete my_polygon; // TODO: not sure if this is best place for this
+    delete my_point_xy; // TODO: not sure if this is best place for this
   OUTPUT:
     RETVAL
 
@@ -69,6 +73,8 @@ point_covered_by_polygon(my_point_xy, my_polygon)
     polygon* my_polygon
   CODE:
     RETVAL = boost::geometry::covered_by(*my_point_xy, *my_polygon);
+    delete my_polygon; // TODO: not sure if this is best place for this
+    delete my_point_xy; // TODO: not sure if this is best place for this
   OUTPUT:
     RETVAL
 
@@ -79,6 +85,7 @@ linestring_simplify(my_linestring, tolerance)
   CODE:
     RETVAL = new linestring ();
     boost::geometry::simplify(*my_linestring, *RETVAL, tolerance);
+    delete my_linestring; // TODO: not sure if this is best place for this
   OUTPUT:
     RETVAL
 
