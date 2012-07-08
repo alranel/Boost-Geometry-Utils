@@ -3,9 +3,9 @@
 use strict;
 use warnings;
 
-use Test::More tests => 8;
+use Test::More tests => 16;
 use Boost::Geometry::Utils qw(polygon_multi_linestring_intersection
-                              point_within_polygon
+                              point_within_polygon point_covered_by_polygon
                               linestring_simplify);
 
 {
@@ -52,12 +52,29 @@ use Boost::Geometry::Utils qw(polygon_multi_linestring_intersection
         my $point_in = [11,11];
         my $point_out = [8,8];
         my $point_in_hole = [15,15];
+        my $point_on_edge = [10,15];
+        my $point_on_hole_edge = [14,15];
         ok point_within_polygon($point_in, $polygon), 'point in polygon';
         ok !point_within_polygon($point_out, $polygon), 'point outside polygon';
         ok !point_within_polygon($point_in_hole, $polygon),
             'point in hole in polygon';
         my $hole = [$hole_in_square];
         ok point_within_polygon($point_in_hole, $hole), 'point in hole';
+        ok !point_within_polygon($point_on_edge, $polygon),
+            'point on polygon edge';
+        ok !point_within_polygon($point_on_hole_edge, $polygon),
+            'point on hole edge';
+
+        ok point_covered_by_polygon($point_in, $polygon), 'point in polygon';
+        ok !point_covered_by_polygon($point_out, $polygon),
+            'point outside polygon';
+        ok !point_covered_by_polygon($point_in_hole, $polygon),
+            'point in hole in polygon';
+        ok point_covered_by_polygon($point_in_hole, $hole), 'point in hole';
+        ok point_covered_by_polygon($point_on_edge, $polygon),
+            'point on polygon edge';
+        ok point_covered_by_polygon($point_on_hole_edge, $polygon),
+            'point on hole edge';
     }
 
     {

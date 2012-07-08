@@ -63,6 +63,15 @@ point_within_polygon(my_point_xy, my_polygon)
   OUTPUT:
     RETVAL
 
+int
+point_covered_by_polygon(my_point_xy, my_polygon)
+    point_xy* my_point_xy
+    polygon* my_polygon
+  CODE:
+    RETVAL = boost::geometry::covered_by(*my_point_xy, *my_polygon);
+  OUTPUT:
+    RETVAL
+
 linestring*
 linestring_simplify(my_linestring, tolerance)
     linestring* my_linestring
