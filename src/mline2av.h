@@ -30,7 +30,6 @@ multi_linestring2perl(pTHX_ const multi_linestring& mls)
 
 void add_line(AV* theAv, multi_linestring* mls)
 {
-    using boost::geometry::append;
     using boost::geometry::make;
 
   const unsigned int len = av_len(theAv)+1;
