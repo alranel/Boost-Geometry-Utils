@@ -7,6 +7,22 @@
 PROTOTYPES: DISABLE
 
 opolygon*
+_polygon(my_polygon)
+    polygon* my_polygon
+  CODE:
+    RETVAL = my_polygon;
+  OUTPUT:
+    RETVAL
+
+omultilinestring*
+_multi_linestring(my_multi_linestring)
+    multi_linestring* my_multi_linestring
+  CODE:
+    RETVAL = my_multi_linestring;
+  OUTPUT:
+    RETVAL
+
+opolygon*
 _read_wkt_polygon(wkt)
     std::string& wkt
   CODE:

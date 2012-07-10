@@ -30,11 +30,15 @@ sub wkt_to_multilinestring {
 }
 
 sub polygon {
-    _read_wkt_polygon(polygon_to_wkt(@_));
+    _polygon(\@_);
 }
 
 sub linestring {
-    _read_wkt_linestring(linestring_to_wkt(@_));
+    _multi_linestring(\@_)
+}
+
+sub multi_linestring {
+    _multi_linestring(\@_)
 }
 
 1;
