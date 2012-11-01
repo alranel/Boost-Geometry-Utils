@@ -78,10 +78,10 @@ use Boost::Geometry::Utils qw(polygon_multi_linestring_intersection
     }
 
     {
-        my $line = [[1.1, 1.1], [2.5, 2.1], [3.1, 3.1], [4.9, 1.1], [3.1, 1.9]];
-        my $simplified = linestring_simplify($line, 0.5);
+        my $line = [[11, 11], [25, 21], [31, 31], [49, 11], [31, 19]];
+        my $simplified = linestring_simplify($line, 5);
         is_deeply $simplified,
-            [ [1.1, 1.1], [3.1, 3.1], [4.9, 1.1], [3.1, 1.9] ],
+            [ [11, 11], [31, 31], [49, 11], [31, 19] ],
             'linestring simplification';
     }
 }
