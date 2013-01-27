@@ -5,22 +5,41 @@
 #include "myinit.h"
 #include <boost/geometry/algorithms/num_points.hpp>
 
+void add_ring_perl(AV* polygon_av, ring& theRing)
+{
+    AV* ring_av = newAV();
+    AV* point_av;
+    
+    // number of points in the ring
+    const unsigned int len = boost::geometry::num_points(theRing);
+    av_extend(ring_av, len-1);
+    //fprintf(stderr, "Points in ring: len=%d\n", len);
+  
+    for(unsigned int i = 0; i < len; i++) {
+        point_av = newAV();
+        av_store(ring_av, i, newRV_noinc((SV*)point_av));
+        av_fill(point_av, 1);
+        av_store_point_xy(point_av, theRing[i].x(), theRing[i].y());
+    }
+    
+    av_push(polygon_av, newRV_noinc((SV*)ring_av));
+}
+
 SV*
 polygon2perl(pTHX_ const polygon& poly)
 {
-  AV* av = newAV();
-  AV* innerav;
-  const unsigned int len = boost::geometry::num_points(poly.outer());
-  av_extend(av, len-1);
-fprintf(stderr, "Return: len=%d\n", len);
-  
-  for(unsigned int i = 0; i < len; i++) {
-    innerav = newAV();
-    av_store(av, i, newRV_noinc((SV*)innerav));
-    av_fill(innerav, 1);
-    av_store_point_xy(innerav, poly.outer()[i].x(), poly.outer()[i].y());
-  }
-  return (SV*)newRV_noinc((SV*)av);
+    AV* av = newAV();
+    
+    ring my_ring = poly.outer();
+    add_ring_perl(av, my_ring);
+    
+    std::vector<ring>::size_type sz = poly.inners().size();
+    for (unsigned i = 0; i < sz; i++) {
+        my_ring = poly.inners()[i];
+        add_ring_perl(av, my_ring);
+    }
+    
+    return (SV*)newRV_noinc((SV*)av);
 }
 
 int add_ring(AV* theAv, ring& theRing)
