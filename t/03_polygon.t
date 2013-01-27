@@ -20,6 +20,12 @@ use Boost::Geometry::Utils qw(polygon);
             [16, 16],
             [16, 14],
         ],
+        [  # cw
+            [54, 54],
+            [54, 56],
+            [56, 56],
+            [56, 54],
+        ],
     ];
     is_deeply Boost::Geometry::Utils::_polygon_arrayref(polygon(@$p)), $p, 'conversion roundtrip';
 }

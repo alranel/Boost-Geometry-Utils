@@ -42,7 +42,7 @@ polygon2perl(pTHX_ const polygon& poly)
     return (SV*)newRV_noinc((SV*)av);
 }
 
-int add_ring(AV* theAv, ring& theRing)
+int add_ring(AV* theAv, polygon& poly, const int ring_index)
 {
     using boost::geometry::append;
     using boost::geometry::make;
@@ -59,7 +59,7 @@ int add_ring(AV* theAv, ring& theRing)
       return 0;
     }
     innerav = (AV*)SvRV(*elem);
-    append(theRing, av_fetch_point_xy(innerav));
+    append(poly, av_fetch_point_xy(innerav), ring_index);
   }
   return 1;
 }
@@ -67,43 +67,36 @@ int add_ring(AV* theAv, ring& theRing)
 polygon*
 perl2polygon(pTHX_ AV* theAv)
 {
-    using boost::geometry::correct;
+    using boost::geometry::interior_rings;
     
-  const unsigned int len = av_len(theAv)+1;
-  SV** elem;
-  AV* innerav;
-  elem = av_fetch(theAv, 0, 0);
-  if (!SvROK(*elem)
-      || SvTYPE(SvRV(*elem)) != SVt_PVAV
-      || av_len((AV*)SvRV(*elem)) < 1) {
-    return NULL;
-  }
-  polygon* retval = new polygon();
-  ring& outer = retval->outer();
-  if (!add_ring((AV*)SvRV(*elem), outer)) {
-    delete retval;
-    return NULL;
-  }
+    // read number of input rings
+    const unsigned int len = av_len(theAv)+1;
+    
+    // initialize resulting polygon
+    polygon* retval = new polygon();
+    
+    // create interior rings (append doesn't create them automatically)
+    interior_rings(*retval).resize(len-1);
   
-  for (unsigned int i = 1; i < len; i++) {
-    elem = av_fetch(theAv, i, 0);
-    if (!SvROK(*elem)
-        || SvTYPE(SvRV(*elem)) != SVt_PVAV
-        || av_len((AV*)SvRV(*elem)) < 1)
-    {
-      delete retval;
-      return NULL;
+    SV** elem;
+    for (unsigned int i = 0; i < len; i++) {
+        // validate input data
+        elem = av_fetch(theAv, i, 0);
+        if (!SvROK(*elem)
+            || SvTYPE(SvRV(*elem)) != SVt_PVAV
+            || av_len((AV*)SvRV(*elem)) < 1)
+        {
+            delete retval;
+            return NULL;
+        }
+    
+        // append point to ring i-1 (-1 is outer ring)
+        if (!add_ring((AV*)SvRV(*elem), *retval, i-1)) {
+            delete retval;
+            return NULL;
+        }
     }
-    innerav = (AV*)SvRV(*elem);
-    retval->inners().resize(1);
-    ring& inner = retval->inners().back();
-    if (!add_ring(innerav, inner)) {
-      delete retval;
-      return NULL;
-    }
-  }
-  //correct(*retval);
-  return retval;
+    return retval;
 }
 
 #endif
