@@ -14,6 +14,14 @@ _polygon(my_polygon)
   OUTPUT:
     RETVAL
 
+polygon*
+_polygon_arrayref(my_polygon)
+    opolygon* my_polygon
+  CODE:
+    RETVAL = my_polygon;
+  OUTPUT:
+    RETVAL
+
 omultilinestring*
 _multi_linestring(my_multi_linestring)
     multi_linestring* my_multi_linestring
@@ -47,6 +55,16 @@ polygon_linestring_intersection(my_polygon, my_linestring)
   CODE:
     RETVAL = new multi_linestring ();
     boost::geometry::intersection(*my_polygon, *my_linestring, *RETVAL);
+  OUTPUT:
+    RETVAL
+
+std::string
+_polygon_to_wkt(my_polygon)
+    opolygon* my_polygon
+  CODE:
+    std::ostringstream output;
+    output << boost::geometry::wkt(*my_polygon);
+    RETVAL = output.str();
   OUTPUT:
     RETVAL
 
