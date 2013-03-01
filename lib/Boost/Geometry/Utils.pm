@@ -12,6 +12,7 @@ XSLoader::load('Boost::Geometry::Utils', $Boost::Geometry::Utils::VERSION);
 our @EXPORT_OK = qw(polygon_to_wkt linestring_to_wkt wkt_to_multilinestring
     polygon linestring polygon_linestring_intersection
     polygon_multi_linestring_intersection
+    polygon_voronoi
     point_within_polygon point_covered_by_polygon linestring_simplify);
 
 sub polygon_to_wkt {

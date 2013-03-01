@@ -5,6 +5,7 @@
 %typemap{omultilinestring};
 
 %typemap{polygon};
+%typemap{bp_polygon};
 %typemap{const polygon};
 %typemap{linestring};
 %typemap{multi_linestring};
