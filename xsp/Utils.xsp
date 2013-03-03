@@ -123,32 +123,36 @@ linestring_simplify(my_linestring, tolerance)
   OUTPUT:
     RETVAL
 
-#multi_linestring*
-int
-#polygon_voronoi(my_polygon, my_hole_points)
+multi_linestring*
 polygon_voronoi(my_polygon)
     polygon* my_polygon
-#    bp_point* my_hole_points
   CODE:
-    /* RETVAL = new multi_linestring (); */
-    using boost::polygon::voronoi_diagram;
-    std::vector<bp_segment> segments;
-    ring my_ring = my_polygon->outer();
-    const unsigned int line_len = boost::geometry::num_points(my_ring);
 
-    for (unsigned int j = 1; j < line_len; j++) {
-      segments.push_back(
-        bp_segment(
-          bp_point(my_ring[j-1].get<0>(), my_ring[j-1].get<1>()),
-          bp_point(my_ring[j].get<0>(),   my_ring[j].get<1>())
-        )
-      );
-    }
+    // We should return something richer than linestrings.
+    RETVAL = new multi_linestring();
 
-    voronoi_diagram<double> vd;
-    //construct_voronoi(points.begin(), points.end(), segments.begin(), segments.end(), &vd);
+    // We use the existing polygon* typemap, then convert from polygon rings to 
+    // lists of segments. Would be better to go directly from perl to segments.
+    std::vector<boost::polygon::segment_data<double> > segments;
+
+    // load polygon holes into segment list first
+    BOOST_FOREACH(ring r, my_polygon->inners()) { ring2segments(r, segments); }
+
+    // Note the index at the end of the hole segment list.
+    // This lets us filter out Voronoi edges inside holes, because
+    // they will all reference source segments below this index number.
+    int start_contour_index = (int) segments.size();
+
+    // Load outer polygon contour in to segments list.
+    ring2segments(my_polygon->outer(), segments);
+
+    // Generate the Voronoi Dieagram
+    boost::polygon::voronoi_diagram<double> vd;
     construct_voronoi(segments.begin(), segments.end(), &vd);
-    RETVAL = iterate_primary_edges1(vd);
+
+    // Selectively extract geometry from the Voronoi diagram graph structure.
+    primary_voronoi_edges_polygon(vd, RETVAL, segments, start_contour_index);
+
   OUTPUT:
     RETVAL
 %}
