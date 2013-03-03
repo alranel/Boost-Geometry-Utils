@@ -17,7 +17,9 @@
 #include <boost/geometry/geometries/adapted/boost_polygon/point.hpp>
 #include <boost/polygon/voronoi.hpp>
 
-typedef boost::geometry::model::d2::point_xy<int> point_xy;
+/* Using boost::polygons's point type with the boost::geometry adapter lets   */
+/* us freely pass points around between the two libraries.                    */
+typedef boost::polygon::point_data<int> point_xy;
 typedef boost::geometry::model::polygon<point_xy,false,false> polygon;
 typedef boost::geometry::model::linestring<point_xy> linestring;
 typedef boost::geometry::model::multi_linestring<linestring> multi_linestring;
