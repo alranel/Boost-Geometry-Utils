@@ -86,10 +86,6 @@ use constant VISITED  => 10;
     );
     
     orient_expolygon(\@expoly2);
-
-
-    
-
        
     my $scale  = 100000;
     my $scale2 = 10000;
@@ -130,7 +126,6 @@ use constant VISITED  => 10;
     @external_primary_edges    = grep $_->[0] && $_->[1], @external_primary_edges;
     @external_nonprimary_edges = grep $_->[0] && $_->[1], @external_nonprimary_edges;
 
-#exit;
     # Collect edge loops going around cells
     my @cell_loops;
     while (my $start_edge = first { not $_->[VISITED] } @{$ma->{edges}}) {
@@ -140,7 +135,7 @@ use constant VISITED  => 10;
         push @{$cell_loops[-1]}, $edge->[POINT] if $edge->[POINT];
         ++$edge->[VISITED];
         $edge = $edge->[NEXT];
-        print "UNDEF EDGE\n" if !defined($edge);
+        #print "UNDEF EDGE\n" if !defined($edge);
       } while ($edge && $edge != $start_edge && !$edge->[VISITED]);
       # close the path
       push @{$cell_loops[-1]}, $edge->[POINT] if $edge->[POINT];
@@ -148,9 +143,6 @@ use constant VISITED  => 10;
 
     # reset
     $_->[VISITED] = 0 for @{$ma->{edges}};
-
-
-#next one worked perfectly a couple times - don't know what I did to mess it up
 
     # Collect a path of primary edges that doesn't leave the polygon
     my @path_loops;
@@ -176,11 +168,11 @@ use constant VISITED  => 10;
              $edge = $edge->[NEXT];
            } else { # skip over a non-primary edge before a curved primary edge
              $edge = $edge->[NEXT]->[TWIN]->[NEXT];
-die "now done in c1?"; 
+             #die "now done in c1?"; 
            }
          } else { # corner - end touches polygon, so turn around
            $edge = $edge->[TWIN];                      
-die "now done in c2?"; 
+           #die "now done in c2?"; 
          }
        } while (defined $edge->[NEXT] && $edge != $start_edge && not $edge->[VISITED]);
        # Since here we're just collecting points,
@@ -190,61 +182,39 @@ die "now done in c2?";
      }
     
     my @poly = @{$ma->{vertices}};
-    
-
-
-    
-    # my @poly2;
-    # my %edges;
-    # foreach my $e (@{$ma->{edges}}) {
-      # $edges{$e} = $e;
-    # }
-    # do {
-      # #//printf("chain\n");
-      # my $start_edge = (values %edges)[0];
-      # my $walk_edge = $start_edge;
-      # do {
-        # push(@poly2,$walk_edge->[1]);
-        # #//printf("%lu, %lu,  v0,v1: %llu, %llu\n",walk_edge->cell()->source_index(), walk_edge->color(),  walk_edge->vertex0(),walk_edge->vertex1());
-        # #                       twin->next
-        # $walk_edge = $walk_edge->[2]->[3];
-        # #                    previous->twin
-        # delete $edges{$walk_edge->[4]->[2]};
-      # } while ($walk_edge != $start_edge && scalar(values %edges));
-    # } while (scalar(values %edges));
-      
+     
 
     #diag(join("\n",map scalar(@$_), @$ma));
-    use lib "/home/mike";
-    use Slic4rt;
-    my $svg = SVGAppend->new('/home/mike/bgu_gtl_vor.svg',{style=>'background-color:#000000;'},'clobber');
-    $svg->appendPolygons({style=>"stroke-width:".($scale*0.1).";stroke:blue;fill:none;"},\@expoly2);
-    $svg->appendPolylines({style=>"stroke-width:".($scale*0.1).";stroke:green;fill:none;"},
-       @cell_loops);
-    $svg->appendPolylines({style=>"stroke-width:".($scale*0.4).";opacity:0.7;stroke-linecap:round;stroke-linejoin:round;stroke:orange;fill:none;"},
-       @path_loops);
-    $svg->appendCircles({style=>"stroke-width:".($scale*0.05).";stroke:yellow;fill:none;"},
-       grep defined($_) && defined($_->[0]) && defined($_->[1] && defined($_->[2])), @poly);
+    # use lib "/home/mike";
+    # use Slic4rt;
+    # my $svg = SVGAppend->new('/home/mike/bgu_gtl_vor.svg',{style=>'background-color:#000000;'},'clobber');
+    # $svg->appendPolygons({style=>"stroke-width:".($scale*0.1).";stroke:blue;fill:none;"},\@expoly2);
+    # $svg->appendPolylines({style=>"stroke-width:".($scale*0.1).";stroke:green;fill:none;"},
+       # @cell_loops);
+    # $svg->appendPolylines({style=>"stroke-width:".($scale*0.4).";opacity:0.7;stroke-linecap:round;stroke-linejoin:round;stroke:orange;fill:none;"},
+       # @path_loops);
+    # $svg->appendCircles({style=>"stroke-width:".($scale*0.05).";stroke:yellow;fill:none;"},
+       # grep defined($_) && defined($_->[0]) && defined($_->[1] && defined($_->[2])), @poly);
     
-    if (0) {
-    $svg->appendLines({style=>"stroke-width:".($scale*0.5).";stroke:#0000FF;fill:none;"},
-        @external_primary_edges);
-    $svg->appendLines({style=>"stroke-width:".($scale*0.5).";stroke:aqua;fill:none;"},
-        @external_nonprimary_edges);
-    $svg->appendPoints({r=>($scale*0.9),style=>"stroke-width:".($scale*0.05).";stroke:#0000FF;fill:none;"},
-       map [$_->[0],$_->[1]], @degen_ext_prim_edges);
-    $svg->appendPoints({r=>($scale*0.9),style=>"stroke-width:".($scale*0.05).";stroke:aqua;fill:none;"},
-       map [$_->[0],$_->[1]], @degen_ext_nonprim_edges);
+    # if (0) {
+    # $svg->appendLines({style=>"stroke-width:".($scale*0.5).";stroke:#0000FF;fill:none;"},
+        # @external_primary_edges);
+    # $svg->appendLines({style=>"stroke-width:".($scale*0.5).";stroke:aqua;fill:none;"},
+        # @external_nonprimary_edges);
+    # $svg->appendPoints({r=>($scale*0.9),style=>"stroke-width:".($scale*0.05).";stroke:#0000FF;fill:none;"},
+       # map [$_->[0],$_->[1]], @degen_ext_prim_edges);
+    # $svg->appendPoints({r=>($scale*0.9),style=>"stroke-width:".($scale*0.05).";stroke:aqua;fill:none;"},
+       # map [$_->[0],$_->[1]], @degen_ext_nonprim_edges);
     
-    $svg->appendLines({style=>"stroke-width:".($scale*0.5).";stroke:#666666;fill:none;"},
-        @internal_primary_edges);
-    $svg->appendLines({style=>"stroke-width:".($scale*0.5).";stroke:#AAAAAA;fill:none;"},
-        @internal_nonprimary_edges);
-    $svg->appendPoints({r=>($scale*0.9),style=>"stroke-width:".($scale*0.05).";stroke:#666666;fill:none;"},
-       map [$_->[0],$_->[1]], @degen_int_prim_edges);
-    $svg->appendPoints({r=>($scale*0.9),style=>"stroke-width:".($scale*0.05).";stroke:#AAAAAA;fill:none;"},
-       map [$_->[0],$_->[1]], @degen_int_nonprim_edges);
-   }
+    # $svg->appendLines({style=>"stroke-width:".($scale*0.5).";stroke:#666666;fill:none;"},
+        # @internal_primary_edges);
+    # $svg->appendLines({style=>"stroke-width:".($scale*0.5).";stroke:#AAAAAA;fill:none;"},
+        # @internal_nonprimary_edges);
+    # $svg->appendPoints({r=>($scale*0.9),style=>"stroke-width:".($scale*0.05).";stroke:#666666;fill:none;"},
+       # map [$_->[0],$_->[1]], @degen_int_prim_edges);
+    # $svg->appendPoints({r=>($scale*0.9),style=>"stroke-width:".($scale*0.05).";stroke:#AAAAAA;fill:none;"},
+       # map [$_->[0],$_->[1]], @degen_int_nonprim_edges);
+   # }
     # $svg->appendPolylines({style=>"stroke-width:".($scale*0.2).";stroke:orange;fill:none;"},
        # [grep defined($_) && defined($_->[0]), @poly2]);
 }
