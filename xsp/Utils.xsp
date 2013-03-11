@@ -123,36 +123,19 @@ linestring_simplify(my_linestring, tolerance)
   OUTPUT:
     RETVAL
 
-multi_linestring*
-polygon_voronoi(my_polygon)
+SV*
+polygon_medial_axis(my_polygon)
     polygon* my_polygon
   CODE:
-
-    // We should return something richer than linestrings.
-    RETVAL = new multi_linestring();
-
-    // We use the existing polygon* typemap, then convert from polygon rings to 
-    // lists of segments. Would be better to go directly from perl to segments.
-    std::vector<boost::polygon::segment_data<double> > segments;
-
-    // load polygon holes into segment list first
-    BOOST_FOREACH(ring r, my_polygon->inners()) { ring2segments(r, segments); }
-
-    // Note the index at the end of the hole segment list.
-    // This lets us filter out Voronoi edges inside holes, because
-    // they will all reference source segments below this index number.
-    int start_contour_index = (int) segments.size();
-
-    // Load outer polygon contour in to segments list.
-    ring2segments(my_polygon->outer(), segments);
-
-    // Generate the Voronoi Dieagram
-    boost::polygon::voronoi_diagram<double> vd;
-    construct_voronoi(segments.begin(), segments.end(), &vd);
-
-    // Selectively extract geometry from the Voronoi diagram graph structure.
-    primary_voronoi_edges_polygon(vd, RETVAL, segments, start_contour_index);
-
+    boost::polygon::default_voronoi_builder builder;
+    boost::polygon::medial_axis<double> ma;
+    builder_segments_from_ring(my_polygon->outer(), builder);
+    BOOST_FOREACH(ring r, my_polygon->inners()) { 
+      builder_segments_from_ring(r, builder);
+    }
+    delete my_polygon;
+    builder.construct(&ma);
+    RETVAL = medial_axis2perl(ma);
   OUTPUT:
     RETVAL
 %}

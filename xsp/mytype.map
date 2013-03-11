@@ -3,8 +3,6 @@ omultilinestring*	T_PTROBJ
 
 polygon		T_POLYGON
 polygon*        T_POLYGON_PTR
-bp_polygon		T_POLYGON
-bp_polygon*        T_POLYGON_PTR
 
 linestring	T_LINESTRING
 linestring*	T_LINESTRING_PTR
@@ -14,8 +12,6 @@ multi_linestring*	T_MULTI_LINESTRING_PTR
 
 point_xy	T_POINT_XY
 point_xy*       T_POINT_XY_PTR
-bp_point	T_POINT_XY
-bp_point*       T_POINT_XY_PTR
 
 INPUT
 T_POLYGON

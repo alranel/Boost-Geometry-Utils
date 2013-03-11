@@ -14,7 +14,7 @@
 #include <boost/geometry/geometries/ring.hpp>
 #include <boost/geometry/multi/geometries/multi_linestring.hpp>
 #include <boost/geometry/io/wkt/wkt.hpp>
-#include <boost/geometry/geometries/adapted/boost_polygon/point.hpp>
+#include <boost/geometry/geometries/adapted/boost_polygon.hpp>
 #include <boost/polygon/voronoi.hpp>
 
 /* Using boost::polygons's point type with the boost::geometry adapter lets   */
@@ -47,4 +47,5 @@ typedef boost::geometry::model::multi_linestring<linestring> omultilinestring;
 #include "mline2av.h"
 #include "point2av.h"
 #include "line2av.h"
+#include "medial_axis.hpp"
 #include "voronoi2perl.h"

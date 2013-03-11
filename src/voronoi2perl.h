@@ -3,112 +3,295 @@
 
 #include "voronoi_visual_utils.hpp"
 #include <cstdio>
+#include <map>
+#include <cmath>
 
 using namespace boost::polygon;
-typedef boost::polygon::voronoi_diagram<double> VD;
-typedef boost::polygon::segment_data<double> bp_segment;
-static const std::size_t EXTERNAL_COLOR = 1;
 
-// helper functions addapted from boost::polygon voronoi example code
-// http://www.boost.org/doc/libs/1_52_0/libs/polygon/example/voronoi_visualizer.cpp
+typedef medial_axis<double> VD;
+typedef segment_data<int> bp_segment;
 
-point_xy retrieve_point(const VD::cell_type & cell, std::vector<bp_segment> & site_data) {
-  VD::cell_type::source_index_type index = cell.source_index();
-  VD::cell_type::source_category_type category = cell.source_category();
-  if (category == SOURCE_CATEGORY_SEGMENT_START_POINT) {
-    return low(site_data[index]);
+static const unsigned int EXTERNAL_COLOR  = (unsigned int) 1;
+static const unsigned int IS_LEAF         = (unsigned int) 2;
+static const unsigned int AT_JUNCTION     = (unsigned int) 4;
+static const unsigned int TWINS_PROCESSED = (unsigned int) 8;
+
+typedef double CT;
+typedef double AT;
+
+void rotate_2d(CT x, CT y, const AT theta, const CT xo=0, const CT yo=0) {
+  CT xp;
+  x -= xo;
+  y -= yo;
+  xp = x * cos(theta) - y * sin(theta) + xo;
+  y  = y * cos(theta) + x * sin(theta) + yo;
+  x  = xp;
+}
+
+void reflect(CT x, CT y, const CT x0, const CT y0, const CT x1, const CT y1) {
+  double theta = atan2(y1 - y0, x1 - x0);
+  rotate_2d(x, y, -theta, x0, y0);
+  y *= -1;
+  rotate_2d(x, y, theta, x0, y0);
+}
+
+SV* 
+medial_axis2perl(const VD &vd, const bool internal_only = true) {
+
+  std::size_t num_edges = 0;
+  if (internal_only) {
+    for (VD::const_edge_iterator it = vd.edges().begin(); it != vd.edges().end(); ++it) {
+      if (!(it->color() & EXTERNAL_COLOR)) { ++num_edges; }
+    }
   } else {
-    return high(site_data[index]);
+    num_edges = vd.num_edges();
   }
-}
-
-bp_segment retrieve_segment(const VD::cell_type& cell, std::vector<bp_segment> & site_data) {
-  VD::cell_type::source_index_type index = cell.source_index();
-  return site_data[index];
-}
   
-void sample_curved_edge(
-    const VD::edge_type& edge,
-    std::vector<point_data<double> > * sampled_edge, double max_dist, std::vector<bp_segment> & site_data) {
-  point_xy point = edge.cell()->contains_point() ?
-      retrieve_point(*edge.cell(), site_data) :
-      retrieve_point(*edge.twin()->cell(), site_data);
-  bp_segment segment = edge.cell()->contains_point() ?
-      retrieve_segment(*edge.twin()->cell(), site_data) :
-      retrieve_segment(*edge.cell(), site_data);
-  voronoi_visual_utils<double>::discretize(
-      point, segment, max_dist, sampled_edge);
-}
+  AV* edges_out = newAV();
+  av_extend(edges_out, num_edges - 1);
+  AV* vertices_out = newAV();
+  av_extend(vertices_out, vd.num_vertices() - 1);
 
-void color_exterior(const VD::edge_type* edge) {
-  if (edge->color() == EXTERNAL_COLOR) {
-    return;
-  }
-  edge->color(EXTERNAL_COLOR);
-  edge->twin()->color(EXTERNAL_COLOR);
-  const VD::vertex_type* v = edge->vertex1();
-  if (v == NULL || !edge->is_primary()) {
-    return;
-  }
-  v->color(EXTERNAL_COLOR);
-  const VD::edge_type* e = v->incident_edge();
-  do {
-    color_exterior(e);
-    e = e->rot_next();
-  } while (e != v->incident_edge());
-}
+  std::map<const VD::edge_type*, AV*> thisToThis;
+  std::map<const VD::edge_type*, AV*> thisToNext;
+  std::map<const VD::edge_type*, AV*> thisToPrev;
+  std::map<const VD::vertex_type*, AV*> vertToAV;
 
-/* first attempt at getting medial axis-like geometry for the interior of a   */
-/* polygon out of the voronoi_diagram - involves filtering out unwanted edges */
-/* outside of the polygon and within holes                                    */
-/* TODO: instead of linestrings, return richer data structure with MIC radius */
-/*       and MIC tangent data                                                 */
-
-void primary_voronoi_edges_polygon(const VD &vd, multi_linestring * mls, std::vector<bp_segment> &site_data, const int contour_start = 0) {
-  // find and mark all edges outside of polygon->outer()
+  std::size_t count = 0;
+  
   for (VD::const_edge_iterator it = vd.edges().begin(); it != vd.edges().end(); ++it) {
-    if (!it->is_finite()) { color_exterior(&(*it)); }
-  }
-  for (VD::const_edge_iterator it = vd.edges().begin();
-       it != vd.edges().end(); ++it) {
+
+    // For all primary edges, calculate:
+    //   theta = direction of the edge
+    //     phi = direction to polygon edge, as deflection from theta
+    // ... also need some kind of parabola parameter for the curved edges
+    // which replaces all the non-primary edges related to curved edges.
+
+    double theta = 0;
+    double phi = 0;
+
     if (it->is_primary() && it->is_finite()
-        // filter out edges inside holes
-        && !(    it->cell()->source_index() < contour_start
-              && it->twin()->cell()->source_index() < contour_start )
-       // filter out edges outside of polygon->outer()
-       && (      it->color() != EXTERNAL_COLOR
-              && it->twin()->color() != EXTERNAL_COLOR )
+        && (!internal_only || !(it->color() & EXTERNAL_COLOR))
        ) {
+      
+      double edx = (double) it->vertex1()->x() - it->vertex0()->x();
+      double edy = (double) it->vertex1()->y() - it->vertex0()->y();
+      //vector or angle?
+      //double eh = sqrt(pow(edx, 2) + pow(edy, 2));
 
-      // get the two edge end points
-      std::vector<point_data<double> > samples;
-      point_data<double> vertex0(it->vertex0()->x(), it->vertex0()->y());
-      samples.push_back(vertex0);
-      point_data<double> vertex1(it->vertex1()->x(), it->vertex1()->y());
-      samples.push_back(vertex1);
+      theta = atan2(edy, edx);
+      
+      double tdx = 1;
+      double tdy = 1;
+      if (!it->rot_next()->is_primary() && it->rot_next()->is_finite()) {
+        it->foot(it->rot_next()->vertex1()->x(), it->rot_next()->vertex1()->y());
+        tdx = (double) it->foot().x() - it->rot_next()->vertex0()->x();
+        tdy = (double) it->foot().y() - it->rot_next()->vertex0()->y();
+      }
+      else if (!it->rot_prev()->is_primary() && it->rot_prev()->is_finite()) {
+        it->foot(it->rot_prev()->vertex1()->x(), it->rot_prev()->vertex1()->y());
+        tdx = (double) it->foot().x() - it->rot_prev()->vertex0()->x();
+        tdy = (double) it->foot().y() - it->rot_prev()->vertex0()->y();
 
-      // approximate any parabolic arc edges
-      if (it->is_curved()) { sample_curved_edge(*it, &samples, 1000.0, site_data); }
+      }
+      else if (!it->twin()->rot_next()->is_primary() && it->twin()->rot_next()->is_finite()) {
+        double x = it->twin()->rot_next()->vertex1()->x();
+        double y = it->twin()->rot_next()->vertex1()->y();
+        reflect(x, y, it->vertex0()->x(), it->vertex0()->y(), 
+                      it->vertex1()->x(), it->vertex1()->y()
+               );
+        it->foot(x, y);
+        tdx = (double) it->foot().x() - it->twin()->rot_next()->vertex0()->x();
+        tdy = (double) it->foot().y() - it->twin()->rot_next()->vertex0()->y();
+      }
+      else if (!it->twin()->rot_prev()->is_primary() && it->twin()->rot_prev()->is_finite()) {
+        double x = it->twin()->rot_prev()->vertex1()->x();
+        double y = it->twin()->rot_prev()->vertex1()->y();
+        reflect(x, y, it->vertex0()->x(), it->vertex0()->y(), 
+                      it->vertex1()->x(), it->vertex1()->y()
+               );
+        it->foot(x, y);
+        tdx = (double) it->foot().x() - it->twin()->rot_prev()->vertex0()->x();
+        tdy = (double) it->foot().y() - it->twin()->rot_prev()->vertex0()->y();
+      }
+      // does all that capture every case?
 
-      mls->push_back(linestring(samples.begin(), samples.end()));
+      phi = atan2(tdy, tdx);
+
+    }
+    
+    // load up perl data
+
+    if (!(it->color() & TWINS_PROCESSED)
+        && it->is_primary()
+        && !(it->color() & EXTERNAL_COLOR)
+       ) {
+      std::size_t ec1 = it->color();
+      std::size_t ec2 = it->twin()->color();
+      it->color(ec1 | TWINS_PROCESSED);
+      it->twin()->color(ec2 | TWINS_PROCESSED);
+
+      // Make the two edge AVs
+      AV* edgeav      = newAV();
+      AV* edgeavtwin  = newAV();
+      av_store(edges_out, count++, newRV_noinc((SV*) edgeav));
+      av_store(edges_out, count++, newRV_noinc((SV*) edgeavtwin));
+
+      // Process each vertex just once, the first time we see it.
+      // Each vertex gets one edge reference -
+      // doesn't matter which, so the first.
+      // Ray edges have NULL vertices, so always check for that.
+
+      if (  (        &(*it->vertex0()) && !(        it->vertex0()->color() & TWINS_PROCESSED))
+         || (&(*it->twin()->vertex0()) && !(it->twin()->vertex0()->color() & TWINS_PROCESSED))
+          ) {
+        if (&(*it->vertex0())) {
+          std::size_t vc1 = it->vertex0()->color();
+          it->vertex0()->color(vc1 | TWINS_PROCESSED);
+          AV* pointav     = newAV();
+          vertToAV[&(*it->vertex0())] = pointav;
+          av_push(vertices_out, newRV_noinc((SV*) pointav));
+          av_fill(pointav,     3);
+          av_store_point_xy(pointav,     it->vertex0()->x(),         it->vertex0()->y());
+          av_store(pointav,     2, newSVnv(it->vertex0()->r()));
+          av_store(pointav,     3, newRV_inc((SV*) edgeav));
+        }
+        if (&(*it->twin()->vertex0())) {
+          std::size_t vc2 = it->twin()->vertex0()->color();
+          it->twin()->vertex0()->color(vc2 | TWINS_PROCESSED);
+          AV* pointavtwin = newAV();
+          vertToAV[&(*it->twin()->vertex0())] = pointavtwin;
+          av_push(vertices_out, newRV_noinc((SV*) pointavtwin));
+          av_fill(pointavtwin, 3);
+          av_store_point_xy(pointavtwin, it->twin()->vertex0()->x(), it->twin()->vertex0()->y());
+          av_store(pointavtwin, 2, newSVnv(it->twin()->vertex0()->r()));
+          av_store(pointavtwin, 3, newRV_inc((SV*) edgeavtwin));
+        }
+      }
+
+      // fill in edge data
+      av_fill(edgeav,     9);
+      av_fill(edgeavtwin, 9);
+      // cell ref - index corresponding to original segment input
+      av_store(edgeav,     0, newSVuv(it->cell()->source_index()));
+      av_store(edgeavtwin, 0, newSVuv(it->twin()->cell()->source_index()));
+      // start vertex ref (rays coming in from infinity don't have one)
+      if (&(*it->vertex0())) {
+        if (vertToAV[&(*it->vertex0())]) {
+          av_store(edgeav,     1, newRV_inc((SV*) vertToAV[&(*it->vertex0())]));
+        }
+      } 
+      if (&(*it->twin()->vertex0())) {
+        if (vertToAV[&(*it->twin()->vertex0())]) {
+          av_store(edgeavtwin, 1, newRV_inc((SV*) vertToAV[&(*it->twin()->vertex0())]));
+        }
+      }
+      // twin ref
+      av_store(edgeav,     2, newRV_inc((SV*) edgeavtwin));
+      av_store(edgeavtwin, 2, newRV_inc((SV*) edgeav));
+      // indeces 3 and 4 are for next and prev edges, to be filled in later
+      // edge direction
+      av_store(edgeav,     5, newSVnv(theta));
+      av_store(edgeavtwin, 5, newSVnv(theta));
+      // radius direction to source segment, as rotation from edge direction
+      av_store(edgeav,     6, newSVnv(phi));
+      av_store(edgeavtwin, 6, newSVnv(phi));
+      // is it a parabolic curve?
+      av_store(edgeav,     7, newSViv(        it->is_curved() ? 1 : 0));
+      av_store(edgeavtwin, 7, newSViv(it->twin()->is_curved() ? 1 : 0));
+      // is it primary?
+      av_store(edgeav,     8, newSViv(        it->is_primary() ? 1 : 0));
+      av_store(edgeavtwin, 8, newSViv(it->twin()->is_primary() ? 1 : 0));
+      // is it internal?
+      int intr1 = (        it->color() - TWINS_PROCESSED > 0) ? 0 : 1;
+      int intr2 = (it->twin()->color() - TWINS_PROCESSED > 0) ? 0 : 1;
+      av_store(edgeav,     9, newSViv(intr1));
+      av_store(edgeavtwin, 9, newSViv(intr2));
+
+      // Storing next/prev references (indeces 3 and 4) will have to wait until
+      // we've processed all edges. Make the lookup tables for that.
+      thisToThis[&(*it)]                 = edgeav;
+      thisToNext[&(*it->prev())]         = edgeav;
+      thisToPrev[&(*it->next())]         = edgeav;
+      thisToThis[&(*it->twin())]         = edgeavtwin;
+      thisToNext[&(*it->twin()->prev())] = edgeavtwin;
+      thisToPrev[&(*it->twin()->next())] = edgeavtwin;
+    }   
+  }
+
+  for (VD::const_edge_iterator it = vd.edges().begin(); it != vd.edges().end(); ++it) {
+    if (it->is_primary() && !(it->color() & EXTERNAL_COLOR)) {
+      const VD::edge_type* ep = &(*it);
+      AV* edgeav     = thisToThis[ep];
+      AV* edgeavnext = thisToNext[ep];
+      AV* edgeavprev = thisToPrev[ep];
+
+      if (edgeavnext != NULL) {
+        av_store(edgeav, 3, newRV_noinc((SV*) edgeavnext));
+      }
+      if (edgeavprev != NULL) {
+        av_store(edgeav, 4, newRV_noinc((SV*) edgeavprev));
+      }
     }
   }
+
+  // Debug report
+  /*
+  if (0) {
+    printf("\n\nfiltered edges\n");
+    printf("srcInd isInf curved   color  this     twin       next       prev        point\n");
+    for (VD::const_edge_iterator it = vd.edges().begin(); it != vd.edges().end(); ++it) {
+      if (1
+          //&& it->is_primary()
+          //&& it->vertex0() && it->vertex1() 
+          //&& it->is_finite() 
+          //&& !(it->color() & EXTERNAL_COLOR)
+          ) {
+
+          printf("%3d   %5s  %7s  %2d  ",
+            it->cell()->source_index(),
+            (it->is_finite() ? "     ":" INF "),
+            (it->is_curved() ? " curve ":" line  "),
+            it->color()
+          );
+          printf("%llu, %llu , %llu, %llu ",
+            (unsigned long long int) &(*it),
+            (unsigned long long int) it->twin(),
+            (unsigned long long int) it->next(),
+            (unsigned long long int) it->prev()
+          );
+       if (it->vertex0()) {printf("[%f , %f , %f]",it->vertex0()->x(),it->vertex0()->y(),it->vertex0()->r());}
+       else {printf("no vert0");}
+       printf("\n");
+      }
+    }
+  }
+  */
+
+  HV * result = newHV();
+  hv_store(result, "edges",    strlen("edges"),    newRV_noinc((SV*) edges_out), 0);
+  hv_store(result, "vertices", strlen("vertices"), newRV_noinc((SV*) vertices_out), 0);
+
+  return newRV_noinc((SV*) result);
+
 }
 
-template <typename RingLike>
-void ring2segments(const RingLike &my_ring, std::vector<bp_segment> &segments) {
-    BOOST_AUTO(it, boost::begin(my_ring));
-    BOOST_AUTO(end, boost::end(my_ring));
-    BOOST_AUTO(previous, it);
-    for (it++; it != end; ++previous, ++it) {
-        segments.push_back( bp_segment( *previous, *it ) );
+template <typename RingLike, typename VBT>
+void builder_segments_from_ring(const RingLike &my_ring, VBT & vb) {
+  BOOST_AUTO(it, boost::begin(my_ring));
+  BOOST_AUTO(end, boost::end(my_ring));
+  BOOST_AUTO(previous, it);
+  for (it++; it != end; ++previous, ++it) {
+    const bp_segment s( *previous, *it );
+    boost::polygon::insert( s, &vb );
+  }
+  // If ring wasn't closed, add one more closing segment
+  if (boost::size(my_ring) > 2) {
+    if (boost::geometry::disjoint(*boost::begin(my_ring), *(boost::end(my_ring) - 1))) {
+        const bp_segment s( *(end - 1), *boost::begin(my_ring) );
+        boost::polygon::insert( s, &vb );
     }
-    // If ring wasn't closed, add one more closing segment
-    if (boost::size(my_ring) > 2) {
-        if (boost::geometry::disjoint(*boost::begin(my_ring), *(boost::end(my_ring) - 1))) {
-            segments.push_back( bp_segment( *(end - 1), *boost::begin(my_ring) ) );
-        }
-    }
+  }
 }
 
 #endif
