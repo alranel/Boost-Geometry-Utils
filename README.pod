@@ -100,6 +100,10 @@ Returns length of a linestring.
 
 Returns the centroid point of a given polygon.
 
+=head2 linestring_centroid
+
+Returns the centroid point of a given linestring.
+
 =head1 ACKNOWLEDGEMENTS
 
 Thanks to mauke and mst (Matt S. Trout (cpan:MSTROUT) <mst@shadowcat.co.uk>)
