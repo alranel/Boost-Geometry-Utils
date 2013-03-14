@@ -142,4 +142,13 @@ linestring_length(my_linestring)
   OUTPUT:
     RETVAL
 
+point_xy*
+polygon_centroid(my_polygon)
+    polygon* my_polygon
+  CODE:
+    RETVAL = new point_xy ();
+    boost::geometry::centroid(*my_polygon, *RETVAL);
+  OUTPUT:
+    RETVAL
+
 %}

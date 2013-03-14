@@ -13,7 +13,7 @@ our @EXPORT_OK = qw(polygon_to_wkt linestring_to_wkt wkt_to_multilinestring
     polygon linestring polygon_linestring_intersection
     polygon_multi_linestring_intersection
     point_within_polygon point_covered_by_polygon linestring_simplify
-    multi_linestring_simplify linestring_length);
+    multi_linestring_simplify linestring_length polygon_centroid);
 
 sub polygon_to_wkt {
     sprintf 'POLYGON(%s)', join ',', map { sprintf '(%s)', join ',', map { join ' ', @$_ } @$_ } @_;
@@ -133,6 +133,10 @@ or false according to the 'within' strategy.
 =head2 linestring_length
 
 Returns length of a linestring.
+
+=head2 polygon_centroid
+
+Returns the centroid point of a given polygon.
 
 =head1 ACKNOWLEDGEMENTS
 

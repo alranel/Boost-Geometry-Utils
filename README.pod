@@ -96,6 +96,10 @@ or false according to the 'within' strategy.
 
 Returns length of a linestring.
 
+=head2 polygon_centroid
+
+Returns the centroid point of a given polygon.
+
 =head1 ACKNOWLEDGEMENTS
 
 Thanks to mauke and mst (Matt S. Trout (cpan:MSTROUT) <mst@shadowcat.co.uk>)
