@@ -104,6 +104,10 @@ Returns the centroid point of a given polygon.
 
 Returns the centroid point of a given linestring.
 
+=head2 multi_linestring_centroid
+
+Returns the centroid point of a given multi_linestring.
+
 =head1 ACKNOWLEDGEMENTS
 
 Thanks to mauke and mst (Matt S. Trout (cpan:MSTROUT) <mst@shadowcat.co.uk>)

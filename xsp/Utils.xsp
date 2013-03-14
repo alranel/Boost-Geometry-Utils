@@ -160,4 +160,13 @@ linestring_centroid(my_linestring)
   OUTPUT:
     RETVAL
 
+point_xy*
+multi_linestring_centroid(my_multi_linestring)
+    multi_linestring* my_multi_linestring
+  CODE:
+    RETVAL = new point_xy ();
+    boost::geometry::centroid(*my_multi_linestring, *RETVAL);
+  OUTPUT:
+    RETVAL
+
 %}

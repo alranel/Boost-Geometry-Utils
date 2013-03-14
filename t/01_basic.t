@@ -3,11 +3,12 @@
 use strict;
 use warnings;
 
-use Test::More tests => 20;
+use Test::More tests => 21;
 use Boost::Geometry::Utils qw(polygon_multi_linestring_intersection
                               point_within_polygon point_covered_by_polygon
                               linestring_simplify multi_linestring_simplify
-                              linestring_length polygon_centroid linestring_centroid);
+                              linestring_length polygon_centroid linestring_centroid
+                              multi_linestring_centroid);
 
 {
     my $square = [  # ccw
@@ -106,6 +107,7 @@ use Boost::Geometry::Utils qw(polygon_multi_linestring_intersection
     {
         my $line = [ [10, 10], [20, 10] ];
         is_deeply linestring_centroid($line), [15, 10], 'linestring_centroid';
+        is_deeply multi_linestring_centroid([$line]), [15, 10], 'multi_linestring_centroid';
     }
 }
 
