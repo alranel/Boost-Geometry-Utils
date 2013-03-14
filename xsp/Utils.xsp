@@ -123,4 +123,15 @@ linestring_simplify(my_linestring, tolerance)
   OUTPUT:
     RETVAL
 
+multi_linestring*
+multi_linestring_simplify(my_multi_linestring, tolerance)
+    multi_linestring* my_multi_linestring
+    const double tolerance
+  CODE:
+    RETVAL = new multi_linestring ();
+    boost::geometry::simplify(*my_multi_linestring, *RETVAL, tolerance);
+    delete my_multi_linestring; // TODO: not sure if this is best place for this
+  OUTPUT:
+    RETVAL
+
 %}

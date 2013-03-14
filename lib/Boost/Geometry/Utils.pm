@@ -12,7 +12,8 @@ XSLoader::load('Boost::Geometry::Utils', $Boost::Geometry::Utils::VERSION);
 our @EXPORT_OK = qw(polygon_to_wkt linestring_to_wkt wkt_to_multilinestring
     polygon linestring polygon_linestring_intersection
     polygon_multi_linestring_intersection
-    point_within_polygon point_covered_by_polygon linestring_simplify);
+    point_within_polygon point_covered_by_polygon linestring_simplify
+    multi_linestring_simplify);
 
 sub polygon_to_wkt {
     sprintf 'POLYGON(%s)', join ',', map { sprintf '(%s)', join ',', map { join ' ', @$_ } @$_ } @_;
@@ -83,20 +84,6 @@ B<Warning:> the API could change in the future.
 
 =head1 METHODS
 
-=head2 polygon
-
-Converts one or more arrayref(s) of points to a Boost Geometry polygon 
-structure. Note that a Boost Geometry polygon is actually a polygon
-with holes.
-
-=head2 linestring
-
-Converts an arrayref of points to a Boost Geometry linestring.
-
-=head2 multi_linestring
-
-Converts an arrayref of arrayrefs of points to a Boost Geometry multilinestring.
-
 =head2 polygon_linestring_intersection
 
 Performs an intersection between the supplied polygon and linestring,
@@ -126,6 +113,12 @@ Parses a MULTILINESTRING back to a Perl data structure.
 
 Accepts an arrayref of points representing a linestring and a numeric tolerance 
 and returns an arrayref of points representing the simplified linestring.
+
+=head2 multi_linestring_simplify
+
+Accepts an arrayref of arrayrefs of points representing a multilinestring and a 
+numeric tolerance and returns an arrayref of arrayrefs of points representing 
+the simplified linestrings.
 
 =head2 point_covered_by_polygon
 

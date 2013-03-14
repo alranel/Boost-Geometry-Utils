@@ -46,22 +46,17 @@ B<Warning:> the API could change in the future.
 
 =head1 METHODS
 
-=head2 polygon
-
-Converts one or more arrayref(s) of points to a Boost Geometry polygon 
-structure. Note that a Boost Geometry polygon is actually a polygon
-with holes.
-
-=head2 linestring
-
-Converts an arrayref of points to a Boost Geometry linestring.
-
 =head2 polygon_linestring_intersection
 
 Performs an intersection between the supplied polygon and linestring,
 and returns an arrayref of linestrings (represented as arrayrefs of
 points).
 Note that such an intersection is also called I<clipping>.
+
+=head2 polygon_multi_linestring_intersection
+
+Same as I<polygon_linestring_intersection> but it accepts a multilinestring
+object to perform multiple clippings in a single batch.
 
 =head2 polygon_to_wkt
 
@@ -76,10 +71,32 @@ Converts an arrayref of points to a WKT representation of a multilinestring.
 
 Parses a MULTILINESTRING back to a Perl data structure.
 
+=head2 linestring_simplify
+
+Accepts an arrayref of points representing a linestring and a numeric tolerance 
+and returns an arrayref of points representing the simplified linestring.
+
+=head2 multi_linestring_simplify
+
+Accepts an arrayref of arrayrefs of points representing a multilinestring and a 
+numeric tolerance and returns an arrayref of arrayrefs of points representing 
+the simplified linestrings.
+
+=head2 point_covered_by_polygon
+
+Accepts a point and an arrayref of points representing a polygon and returns true 
+or false according to the 'cover_by' strategy.
+
+=head2 point_within_polygon
+
+Accepts a point and an arrayref of points representing a polygon and returns true 
+or false according to the 'within' strategy.
+
 =head1 ACKNOWLEDGEMENTS
 
 Thanks to mauke and mst (Matt S. Trout (cpan:MSTROUT) <mst@shadowcat.co.uk>)
 for their valuable help in getting this to compile under Windows (MinGW) too.
+Thanks to Mark Hindness for his work on data types conversion.
 
 =head1 AUTHOR
 
