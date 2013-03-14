@@ -3,10 +3,11 @@
 use strict;
 use warnings;
 
-use Test::More tests => 17;
+use Test::More tests => 18;
 use Boost::Geometry::Utils qw(polygon_multi_linestring_intersection
                               point_within_polygon point_covered_by_polygon
-                              linestring_simplify multi_linestring_simplify);
+                              linestring_simplify multi_linestring_simplify
+                              linestring_length);
 
 {
     my $square = [  # ccw
@@ -85,6 +86,11 @@ use Boost::Geometry::Utils qw(polygon_multi_linestring_intersection
         is_deeply multi_linestring_simplify([$line], 5),
             [[ [11, 11], [31, 31], [49, 11], [31, 19] ]],
             'multi_linestring simplification';
+    }
+
+    {
+        my $line = [[10, 10], [10, 20]];
+        is linestring_length($line), 10, 'linestring simplification';
     }
 }
 

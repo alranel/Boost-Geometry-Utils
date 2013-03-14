@@ -92,6 +92,10 @@ or false according to the 'cover_by' strategy.
 Accepts a point and an arrayref of points representing a polygon and returns true 
 or false according to the 'within' strategy.
 
+=head2 linestring_length
+
+Returns length of a linestring.
+
 =head1 ACKNOWLEDGEMENTS
 
 Thanks to mauke and mst (Matt S. Trout (cpan:MSTROUT) <mst@shadowcat.co.uk>)

@@ -134,4 +134,12 @@ multi_linestring_simplify(my_multi_linestring, tolerance)
   OUTPUT:
     RETVAL
 
+double
+linestring_length(my_linestring)
+    linestring* my_linestring
+  CODE:
+    RETVAL = boost::geometry::length(*my_linestring);
+  OUTPUT:
+    RETVAL
+
 %}
