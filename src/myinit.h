@@ -12,16 +12,19 @@
 #include <boost/geometry/geometries/linestring.hpp>
 #include <boost/geometry/geometries/ring.hpp>
 #include <boost/geometry/multi/geometries/multi_linestring.hpp>
+#include <boost/geometry/multi/geometries/multi_polygon.hpp>
 #include <boost/geometry/io/wkt/wkt.hpp>
 
 typedef boost::geometry::model::d2::point_xy<int> point_xy;
 typedef boost::geometry::model::polygon<point_xy,false,false> polygon;
+typedef boost::geometry::model::multi_polygon<polygon> multi_polygon;
 typedef boost::geometry::model::linestring<point_xy> linestring;
 typedef boost::geometry::model::multi_linestring<linestring> multi_linestring;
 typedef boost::geometry::model::ring<point_xy,false,false> ring;
 
 // Support old API
 typedef boost::geometry::model::polygon<point_xy,false,false> opolygon;
+typedef boost::geometry::model::multi_polygon<polygon> omultipolygon;
 typedef boost::geometry::model::multi_linestring<linestring> omultilinestring;
 
 

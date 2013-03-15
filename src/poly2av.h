@@ -42,6 +42,35 @@ polygon2perl(pTHX_ const polygon& poly)
     return (SV*)newRV_noinc((SV*)av);
 }
 
+SV*
+multi_polygon2perl(pTHX_ const multi_polygon& multi_poly)
+{
+    AV* av = newAV();
+    
+    // number of polygons in this multi_polygon
+    std::size_t poly_count = boost::geometry::num_geometries(multi_poly);
+    
+    for (unsigned i = 0; i < poly_count; i++) {
+        polygon poly = multi_poly[i];
+        AV* polyav = newAV();
+        
+        // add contour
+        ring my_ring = poly.outer();
+        add_ring_perl(polyav, my_ring);
+        
+        // add holes
+        std::vector<ring>::size_type sz = poly.inners().size();
+        for (unsigned j= 0; j < sz; j++) {
+            my_ring = poly.inners()[j];
+            add_ring_perl(polyav, my_ring);
+        }
+        
+        av_push(av, newRV_noinc((SV*)polyav));
+    }
+    
+    return (SV*)newRV_noinc((SV*)av);
+}
+
 int add_ring(AV* theAv, polygon& poly, const int ring_index)
 {
     using boost::geometry::append;
@@ -95,6 +124,31 @@ perl2polygon(pTHX_ AV* theAv)
             delete retval;
             return NULL;
         }
+    }
+    return retval;
+}
+
+multi_polygon*
+perl2multi_polygon(pTHX_ AV* theAv)
+{
+    // initialize resulting multi_polygon
+    multi_polygon* retval = new multi_polygon();
+  
+    SV** elem;
+    const unsigned int len = av_len(theAv)+1;
+    for (unsigned int i = 0; i < len; i++) {
+        // validate input data
+        elem = av_fetch(theAv, i, 0);
+        if (!SvROK(*elem)
+            || SvTYPE(SvRV(*elem)) != SVt_PVAV
+            || av_len((AV*)SvRV(*elem)) < 1)
+        {
+            delete retval;
+            return NULL;
+        }
+        
+        polygon* poly = perl2polygon(aTHX_ (AV*)SvRV(*elem));
+        retval->push_back(*poly);
     }
     return retval;
 }

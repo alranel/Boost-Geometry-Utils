@@ -3,8 +3,9 @@
 use strict;
 use warnings;
 
-use Test::More tests => 21;
+use Test::More tests => 22;
 use Boost::Geometry::Utils qw(polygon_multi_linestring_intersection
+                              multi_polygon_multi_linestring_intersection
                               point_within_polygon point_covered_by_polygon
                               linestring_simplify multi_linestring_simplify
                               linestring_length polygon_centroid linestring_centroid
@@ -42,12 +43,14 @@ use Boost::Geometry::Utils qw(polygon_multi_linestring_intersection
         is_deeply $intersection, [], 'external line produces no intersections';
     }
     {
-        my $intersection =
-            polygon_multi_linestring_intersection($polygon, $multilinestring);
-        is_deeply $intersection, [
+        my $expected = [
             [ [10, 15], [14, 15] ],
             [ [16, 15], [20, 15] ],
-        ], 'multiple linestring clipping';
+        ];
+        is_deeply polygon_multi_linestring_intersection($polygon, $multilinestring),
+            $expected, 'multiple linestring clipping';
+        is_deeply multi_polygon_multi_linestring_intersection([$polygon], $multilinestring),
+            $expected, 'multiple linestring clipping against multiple polygons';
     }
 
     {

@@ -58,6 +58,11 @@ Note that such an intersection is also called I<clipping>.
 Same as I<polygon_linestring_intersection> but it accepts a multilinestring
 object to perform multiple clippings in a single batch.
 
+=head2 multi_polygon_multi_linestring_intersection
+
+Same as I<polygon_multi_linestring_intersection> but it accepts a multipolygon
+object to perform multiple clippings in a single batch.
+
 =head2 polygon_to_wkt
 
 Converts one or more arrayref(s) of points to a WKT representation of

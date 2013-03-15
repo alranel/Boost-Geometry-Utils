@@ -11,10 +11,10 @@ XSLoader::load('Boost::Geometry::Utils', $Boost::Geometry::Utils::VERSION);
 
 our @EXPORT_OK = qw(polygon_to_wkt linestring_to_wkt wkt_to_multilinestring
     polygon linestring polygon_linestring_intersection
-    polygon_multi_linestring_intersection
+    polygon_multi_linestring_intersection multi_polygon_multi_linestring_intersection
     point_within_polygon point_covered_by_polygon linestring_simplify
     multi_linestring_simplify linestring_length polygon_centroid
-    linestring_centroid multi_linestring_centroid);
+    linestring_centroid multi_linestring_centroid multi_polygon);
 
 sub polygon_to_wkt {
     sprintf 'POLYGON(%s)', join ',', map { sprintf '(%s)', join ',', map { join ' ', @$_ } @$_ } @_;
@@ -33,6 +33,10 @@ sub wkt_to_multilinestring {
 
 sub polygon {
     _polygon(\@_);
+}
+
+sub multi_polygon {
+    _multi_polygon(\@_);
 }
 
 sub linestring {
@@ -95,6 +99,11 @@ Note that such an intersection is also called I<clipping>.
 =head2 polygon_multi_linestring_intersection
 
 Same as I<polygon_linestring_intersection> but it accepts a multilinestring
+object to perform multiple clippings in a single batch.
+
+=head2 multi_polygon_multi_linestring_intersection
+
+Same as I<polygon_multi_linestring_intersection> but it accepts a multipolygon
 object to perform multiple clippings in a single batch.
 
 =head2 polygon_to_wkt

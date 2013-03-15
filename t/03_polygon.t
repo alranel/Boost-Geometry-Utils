@@ -3,8 +3,8 @@
 use strict;
 use warnings;
 
-use Test::More tests => 1;
-use Boost::Geometry::Utils qw(polygon);
+use Test::More tests => 2;
+use Boost::Geometry::Utils qw(polygon multi_polygon);
 
 {
     my $p = [
@@ -27,7 +27,8 @@ use Boost::Geometry::Utils qw(polygon);
             [56, 54],
         ],
     ];
-    is_deeply Boost::Geometry::Utils::_polygon_arrayref(polygon(@$p)), $p, 'conversion roundtrip';
+    is_deeply Boost::Geometry::Utils::_polygon_arrayref(polygon(@$p)), $p, 'polygon conversion roundtrip';
+    is_deeply Boost::Geometry::Utils::_multi_polygon_arrayref(multi_polygon($p)), [$p], 'multi_polygon conversion roundtrip';
 }
 
 __END__

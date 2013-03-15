@@ -2,9 +2,11 @@
 %typemap{std::string&}{reference};
 
 %typemap{opolygon};
+%typemap{omultipolygon};
 %typemap{omultilinestring};
 
 %typemap{polygon};
+%typemap{multi_polygon};
 %typemap{const polygon};
 %typemap{linestring};
 %typemap{multi_linestring};
