@@ -3,13 +3,14 @@
 use strict;
 use warnings;
 
-use Test::More tests => 22;
+use Test::More tests => 24;
 use Boost::Geometry::Utils qw(polygon_multi_linestring_intersection
                               multi_polygon_multi_linestring_intersection
                               point_within_polygon point_covered_by_polygon
                               linestring_simplify multi_linestring_simplify
                               linestring_length polygon_centroid linestring_centroid
-                              multi_linestring_centroid);
+                              multi_linestring_centroid correct_polygon
+                              correct_multi_polygon);
 
 {
     my $square = [  # ccw
@@ -112,6 +113,25 @@ use Boost::Geometry::Utils qw(polygon_multi_linestring_intersection
         is_deeply linestring_centroid($line), [15, 10], 'linestring_centroid';
         is_deeply multi_linestring_centroid([$line]), [15, 10], 'multi_linestring_centroid';
     }
+}
+
+{
+    my $square = [  # cw
+        [10, 20],
+        [20, 20],
+        [20, 10],
+        [10, 10],
+    ];
+    my $hole_in_square = [  # cw
+        [14, 14],
+        [14, 16],
+        [16, 16],
+        [16, 14],
+    ];
+    my $polygon = [$square, $hole_in_square];
+    my $expected = [ [reverse @$square], $hole_in_square ];
+    is_deeply correct_polygon($polygon), $expected, 'correct_polygon';
+    is_deeply correct_multi_polygon([$polygon]), [$expected], 'correct_multi_polygon';
 }
 
 __END__

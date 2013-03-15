@@ -14,7 +14,8 @@ our @EXPORT_OK = qw(polygon_to_wkt linestring_to_wkt wkt_to_multilinestring
     polygon_multi_linestring_intersection multi_polygon_multi_linestring_intersection
     point_within_polygon point_covered_by_polygon linestring_simplify
     multi_linestring_simplify linestring_length polygon_centroid
-    linestring_centroid multi_linestring_centroid multi_polygon);
+    linestring_centroid multi_linestring_centroid multi_polygon
+    correct_polygon correct_multi_polygon);
 
 sub polygon_to_wkt {
     sprintf 'POLYGON(%s)', join ',', map { sprintf '(%s)', join ',', map { join ' ', @$_ } @$_ } @_;
@@ -155,6 +156,14 @@ Returns the centroid point of a given linestring.
 =head2 multi_linestring_centroid
 
 Returns the centroid point of a given multi_linestring.
+
+=head2 correct_polygon
+
+Corrects the orientation(s) of the given polygon.
+
+=head2 correct_multi_polygon
+
+Corrects the orientation(s) of the given multi_polygon.
 
 =head1 ACKNOWLEDGEMENTS
 

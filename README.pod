@@ -113,6 +113,14 @@ Returns the centroid point of a given linestring.
 
 Returns the centroid point of a given multi_linestring.
 
+=head2 correct_polygon
+
+Corrects the orientation(s) of the given polygon.
+
+=head2 correct_multi_polygon
+
+Corrects the orientation(s) of the given multi_polygon.
+
 =head1 ACKNOWLEDGEMENTS
 
 Thanks to mauke and mst (Matt S. Trout (cpan:MSTROUT) <mst@shadowcat.co.uk>)

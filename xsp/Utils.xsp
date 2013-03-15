@@ -197,4 +197,22 @@ multi_linestring_centroid(my_multi_linestring)
   OUTPUT:
     RETVAL
 
+polygon*
+correct_polygon(my_polygon)
+    polygon* my_polygon
+  CODE:
+    boost::geometry::correct(*my_polygon);
+    RETVAL = my_polygon;
+  OUTPUT:
+    RETVAL
+
+multi_polygon*
+correct_multi_polygon(my_multi_polygon)
+    multi_polygon* my_multi_polygon
+  CODE:
+    boost::geometry::correct(*my_multi_polygon);
+    RETVAL = my_multi_polygon;
+  OUTPUT:
+    RETVAL
+
 %}
