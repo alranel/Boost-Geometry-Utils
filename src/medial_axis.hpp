@@ -9,7 +9,7 @@
 
 // See http://www.boost.org for updates, documentation, and revision history.
 
-// Derivitive work by Michael E. Sheldrake, Copyright 2013, distributed
+// Derivative work by Michael E. Sheldrake, Copyright 2013, distributed
 // under the same terms as the license above.
 
 // This is essentially boost/polygon/voronoi_diagram.hpp adapted to further 
@@ -22,6 +22,7 @@
 #include <vector>
 #include <utility>
 #include <cstdio>
+#include <math.h>
 
 #include "boost/polygon/detail/voronoi_ctypes.hpp"
 #include "boost/polygon/detail/voronoi_structures.hpp"
@@ -104,8 +105,9 @@ class medial_axis_cell {
 // Represents Voronoi vertex.
 // Data members:
 //   1) vertex coordinates
-//   2) pointer to the incident edge
-//   3) mutable color member
+//   2) radius of a maximal inscribed circle to the polygon at the vertex
+//   3) pointer to the incident edge
+//   4) mutable color member
 template <typename T>
 class medial_axis_vertex {
  public:
@@ -159,7 +161,8 @@ class medial_axis_vertex {
 //   3) pointer to the twin edge
 //   4) pointer to the CCW next edge
 //   5) pointer to the CCW prev edge
-//   6) mutable color member
+//   6) boolean indicating whether foot coordinates have been set
+//   7) mutable color member
 template <typename T>
 class medial_axis_edge {
  public:
@@ -175,6 +178,7 @@ class medial_axis_edge {
       twin_(NULL),
       next_(NULL),
       prev_(NULL),
+      footset_(false),
       color_(0) {
     if (is_linear)
       color_ |= BIT_IS_LINEAR;
@@ -253,11 +257,13 @@ class medial_axis_edge {
     color_ |= color << BITS_SHIFT;
   }
   
-  // where radius from vertex0 hits source segment
-  const detail::point_2d<default_voronoi_builder::int_type> foot() const { 
-    return foot_;
+  // foot: where radius from vertex0 touches source segment at a 90 degree angle
+  const detail::point_2d<default_voronoi_builder::int_type>* foot() const { 
+    if (!footset_) {return NULL;}
+    return &foot_;
   }
-  void foot(coordinate_type x, coordinate_type y) const {
+  void foot(coordinate_type x, coordinate_type y) {
+    footset_ = true;
     foot_.x(x);
     foot_.y(y);
   }
@@ -279,6 +285,8 @@ class medial_axis_edge {
   medial_axis_edge_type* prev_;
   mutable color_type color_;
   mutable detail::point_2d<default_voronoi_builder::int_type> foot_;
+  bool footset_;
+  mutable detail::point_2d<default_voronoi_builder::int_type> p1_;
 
 };
 
@@ -371,6 +379,7 @@ class medial_axis {
   std::pair<void*, void*> _insert_new_edge(
       const detail::site_event<CT>& site1,
       const detail::site_event<CT>& site2) {
+    //printf("site event\n");
     // Get sites' indexes.
     int site_index1 = site1.sorted_index();
     int site_index2 = site2.sorted_index();
@@ -404,6 +413,57 @@ class medial_axis {
     // Set up twin pointers.
     edge1.twin(&edge2);
     edge2.twin(&edge1);
+    
+    //set foot
+    // this needs work - see note for "set foot" below in the 
+    // _insert_new_edge() function for circle events
+    if (belongs(site1.source_category(), GEOMETRY_CATEGORY_SEGMENT)
+        || belongs(site2.source_category(), GEOMETRY_CATEGORY_SEGMENT)) {
+      if (belongs(site1.source_category(), GEOMETRY_CATEGORY_POINT)
+          && belongs(site2.source_category(), GEOMETRY_CATEGORY_SEGMENT)) {
+        edge1.foot(site1.point0().x(),  site1.point0().y());
+        if (edge2.vertex0()) {
+          double x0 = site2.point0().x();
+          double y0 = site2.point0().y();
+          double x1 = site2.point1().x();
+          double y1 = site2.point1().y();
+          double x = edge2.vertex0()->x();
+          double y = edge2.vertex0()->y();
+          printf("mf1");
+          makefoot(x, y, x0, y0, x1, y1);
+          printf("\n");
+          //reflect(x, y, edge1.vertex0()->x(), edge1.vertex0()->y(), edge1.vertex1()->x(), edge1.vertex1()->y());
+          edge2.foot(x, y);
+
+        }
+      } else {
+        //edge1.foot(0, 0);
+      }
+      if (belongs(site2.source_category(), GEOMETRY_CATEGORY_POINT)
+          && belongs(site1.source_category(), GEOMETRY_CATEGORY_SEGMENT)) {
+        edge2.foot(site2.point0().x(),  site2.point0().y());
+
+        if (edge1.vertex0()) {
+          double x0 = site1.point0().x();
+          double y0 = site1.point0().y();
+          double x1 = site1.point1().x();
+          double y1 = site1.point1().y();
+          double x = edge1.vertex0()->x();
+          double y = edge1.vertex0()->y();
+          printf("mf2");
+          makefoot(x, y, x0, y0, x1, y1);
+          printf("\n");
+          //reflect(x, y, edge1.vertex0()->x(), edge1.vertex0()->y(), edge1.vertex1()->x(), edge1.vertex1()->y());
+          edge1.foot(x, y);
+
+        }
+      } else {
+        //edge2.foot(0, 0);
+      }
+    } else {
+      //edge1.foot(0, 0);
+      //edge2.foot(0, 0);
+    }
 
     // Return a pointer to the new half-edge.
     return std::make_pair(&edge1, &edge2);
@@ -423,6 +483,7 @@ class medial_axis {
       void* data12, void* data23) {
     edge_type* edge12 = static_cast<edge_type*>(data12);
     edge_type* edge23 = static_cast<edge_type*>(data23);
+    //printf("circle event\n");
 
     // Add a new Voronoi vertex.
     vertices_.push_back(vertex_type(circle.x(), circle.y(), 
@@ -461,8 +522,170 @@ class medial_axis {
     edge23->twin()->next(&new_edge2);
     new_edge2.prev(edge23->twin());
 
-    //set foot provisionally
-    new_edge2.foot((coordinate_type) site3.point0().x(), (coordinate_type) site3.point0().y());
+    //set foot
+    // It's possible that we can do all foot-finding in this event processing
+    // (here in the circle event, and in the other site even code above).
+    // But we haven't completely understood or diagramed exactly what edges and 
+    // vertices are available during these events. With a rough mental sketch
+    // of whats going on, we've been able to quickly work up this code to 
+    // calculate enough feet, and infer others later, to handle most cases, and
+    // demonstrate that this medial axis refinement of the Voronoi diagram
+    // should work.
+    // 
+    // What's needed next is to properly analyze-diagram-understand what's
+    // happening during site/circle events, so the code here can be extended
+    // a bit to really cover all cases of calculating the foot, or as many
+    // cases as possible.
+    
+    if (false && !is_linear) {
+      printf("notlinear\n");
+      if (belongs(site1.source_category(), GEOMETRY_CATEGORY_POINT)) {
+        printf(" 1 point");
+      }
+      if (belongs(site1.source_category(), GEOMETRY_CATEGORY_SEGMENT)) {
+        printf(" 1  seg ");
+      }
+      if (belongs(site3.source_category(), GEOMETRY_CATEGORY_POINT)) {
+        printf(" 3 point");
+      }
+      if (belongs(site3.source_category(), GEOMETRY_CATEGORY_SEGMENT)) {
+        printf(" 3  seg ");
+      }
+    printf("\n");
+    }
+    
+    
+    if (false && new_edge2.prev()->is_curved()) {
+      //new_edge2.prev()->foot(500000, 500000);
+       if (belongs(site3.source_category(), GEOMETRY_CATEGORY_SEGMENT)) {
+        double x0 = site3.point0().x();
+        double y0 = site3.point0().y();
+        double x1 = site3.point1().x();
+        double y1 = site3.point1().y();
+        //double x = new_edge2.prev()->vertex1()->x();
+        //double y = new_edge2.prev()->vertex1()->y();
+        double x = new_vertex.x();
+        double y = new_vertex.y();
+
+        makefoot(x, y, x0, y0, x1, y1);
+        new_edge2.prev()->foot(x,y);
+        //new_edge2.prev()->foot(edge23->vertex0()->x(),edge23->vertex0()->y());
+        //printf("anything? %f\n",new_edge2.prev()->vertex0()->x());
+      }
+       else if (belongs(site3.source_category(), GEOMETRY_CATEGORY_POINT)) {
+        new_edge2.prev()->foot(site3.point0().x(),site3.point0().y());
+      }
+      /*
+      else if (belongs(site1.source_category(), GEOMETRY_CATEGORY_SEGMENT)) {
+        double x0 = site1.point0().x();
+        double y0 = site1.point0().y();
+        double x1 = site1.point1().x();
+        double y1 = site1.point1().y();
+        double x = new_edge2.prev()->vertex1()->x();
+        double y = new_edge2.prev()->vertex1()->y();
+        makefoot(x, y, x0, y0, x1, y1);
+        new_edge2.prev()->foot(x,y);
+      }
+      */
+      else {
+        new_edge2.prev()->foot(500000, 500000);
+      }
+    }
+    if (new_edge1.next()->is_curved()) {
+      //new_edge1.next()->foot(-500000, 500000);
+      if (belongs(site1.source_category(), GEOMETRY_CATEGORY_SEGMENT)) {
+        double x0 = site1.point0().x();
+        double y0 = site1.point0().y();
+        double x1 = site1.point1().x();
+        double y1 = site1.point1().y();
+        double x = new_vertex.x();
+        double y = new_vertex.y();
+        makefoot(x, y, x0, y0, x1, y1);
+        new_edge1.next()->foot(x,y);
+
+      } else if (belongs(site1.source_category(), GEOMETRY_CATEGORY_POINT)) {
+        new_edge1.next()->foot(site1.point0().x(), site1.point0().y());
+
+/*
+        if (belongs(site3.source_category(), GEOMETRY_CATEGORY_SEGMENT)) {
+          double x0 = site3.point0().x();
+          double y0 = site3.point0().y();
+          double x1 = site3.point1().x();
+          double y1 = site3.point1().y();
+          double x = new_vertex.x();
+          double y = new_vertex.y();
+          makefoot(x, y, x0, y0, x1, y1);
+          new_edge2.foot(x,y);
+          printf("yep\n");
+        } 
+*/
+
+      }
+      
+      else {
+        //new_edge1.next()->foot(0, 0);
+      }
+    }
+    
+    if (!is_linear) {
+      if (new_edge2.vertex0()) {
+      //printf("NEWEDGE2 vert1: %f, %f\n\n",new_edge2.vertex0()->x(),new_edge2.vertex0()->y());
+      }
+      if (belongs(site1.source_category(), GEOMETRY_CATEGORY_POINT)
+          && belongs(site3.source_category(), GEOMETRY_CATEGORY_SEGMENT)) {
+        if (new_edge2.vertex0()) {
+          double x0 = site3.point0().x();
+          double y0 = site3.point0().y();
+          double x1 = site3.point1().x();
+          double y1 = site3.point1().y();
+          double x = new_edge2.vertex0()->x();
+          double y = new_edge2.vertex0()->y();
+          //printf("mf3");
+          makefoot(x, y, x0, y0, x1, y1);
+          //printf("\n");
+          new_edge2.foot(x, y);
+
+        }
+      } else {
+        //new_edge1.foot(0, 0);
+      }
+      
+      if (belongs(site3.source_category(), GEOMETRY_CATEGORY_POINT)
+          && belongs(site1.source_category(), GEOMETRY_CATEGORY_SEGMENT)) {
+        new_edge2.foot(site3.point0().x(),  site3.point0().y());
+
+        //printf("premf4\n");
+        if (
+          false
+          //new_edge2.vertex0() 
+          //&& new_edge2.vertex1()
+          
+        ) {
+          double x0 = site1.point0().x();
+          double y0 = site1.point0().y();
+          double x1 = site1.point1().x();
+          double y1 = site1.point1().y();
+          double x = new_edge1.vertex0()->x();
+          double y = new_edge1.vertex0()->y();
+          //double x = new_vertex.x();
+          //double y = new_vertex.y();
+          printf("mf4");
+          makefoot(x, y, x0, y0, x1, y1);
+          printf("\n");
+          // Were getting in here often, but this foot is probably 
+          // getting reset most of the time by one of the other conditionals.
+          // Only noticed one foot affected by perturbing this foot.
+          new_edge1.foot(x, y);
+
+        }
+      } else {
+        ////new_edge2.foot(0, 0);
+      }
+      
+    } else {
+      //new_edge1.foot(0, 0);
+      //new_edge2.foot(0, 0);
+    }
 
     // Return a pointer to the new half-edge.
     return std::make_pair(&new_edge1, &new_edge2);
@@ -481,6 +704,7 @@ class medial_axis {
         if (it != last_edge) {
           edge_type* e1 = &(*last_edge = *it);
           edge_type* e2 = &(*(last_edge + 1) = *(it + 1));
+
           e1->twin(e2);
           e2->twin(e1);
           if (e1->prev()) {
@@ -581,6 +805,24 @@ class medial_axis {
     // The above gets us the complete Voronoi diagram.
     // Now we'll narrow that down to just the medial axis for the polygon.
     
+    if (0) { // handy data dump to copy-paste between stages while debugging
+    for (edge_iterator it = edges_.begin(); it != edges_.end(); ++it) {
+      printf("edge %lld: %lld, %lld, %lld, %ld, %ld, %s, %s, %s, %s, %s\n",
+          (long long unsigned int) &(*it),
+          (long long unsigned int) it->twin(),
+          (long long unsigned int) it->next(),
+          (long long unsigned int) it->prev(),
+          it->color(),
+          it->cell()->source_index(),
+          it->is_curved()?"curved":"      ",
+          it->is_finite()?"finite":"      ",
+          it->is_primary()?"primary":"      ",
+          it->twin() == it->next() ? "next=twin":"twok",
+          &(*it) == it->next() ? "next=itself":"nxtok"
+      );
+    }
+    }
+
     // Mark edges exterior to the polygon by setting color attribute to 1.
     // (Adjacent vertices and cells are also marked.)
     for (edge_iterator it = edges_.begin(); it != edges_.end(); ++it) {
@@ -616,13 +858,16 @@ class medial_axis {
     // curved edges get their labels fixed too.
 
     for (cell_iterator it = cells_.begin(); it != cells_.end(); ++it) {
+      //printf("    cell source_index %ld\n",it->source_index());
       edge_type* e = it->incident_edge();
       do {
         if (e->is_primary() && e->next()->is_primary()) {
           if (e->color() == 0 && e->next()->color() != 0) {
+            //printf("    start first recurse\n");
             mark_interior(e->next());
             } 
           if (e->color() != 0 && e->next()->color() == 0) {
+            //printf("    start second recurse\n");
             mark_interior(e, true);
             }
         }
@@ -678,6 +923,8 @@ class medial_axis {
       do {
         // mark visited internal edges (will restore to 0 afterward)
         edge->color(2);
+        double theta = atan2(edge->vertex1()->y() - edge->vertex0()->y(),
+                             edge->vertex1()->x() - edge->vertex0()->x());
         // if next edge is within polygon
         if (edge->next()->color() == 0 || edge->next()->color() == 2) {
           if (edge->next()->is_primary()) { 
@@ -687,6 +934,52 @@ class medial_axis {
             // skip over a non-primary edge to the primary edge that follows it
             edge_type * prev = edge;
             edge = edge->next()->twin()->next();
+            // get foot from non-primary endpoint and
+            // mirror foot info from the non-primary to the twin
+            if (prev->twin()->vertex0() && prev->twin()->vertex1() && prev->next()->vertex1()) {
+              // The reflect about line case is simple:
+              double x = prev->next()->vertex1()->x() + 0;
+              double y = prev->next()->vertex1()->y() + 0;
+              edge->foot(x, y);
+
+              double x0 = prev->twin()->vertex0()->x() + 0;
+              double y0 = prev->twin()->vertex0()->y() + 0;
+              double x1, y1;
+              if (!prev->twin()->is_curved()) {
+                double x1 = prev->twin()->vertex1()->x() + 0;
+                double y1 = prev->twin()->vertex1()->y() + 0;
+                reflect(x, y, x0, y0, x1, y1);
+                prev->twin()->foot(x, y);
+                //printf("reflect foot to line\n");
+              } else {
+                // The case for a curved edge isn't as simple, but 
+                // it seems most feet in this case are already properly
+                // calculated by the event-processing code.
+                // It may be that we never get to, or should never need to 
+                // get into this else{}. Maybe eliminate this after foot-finding
+                // in the event-processing has been fully understood and
+                // implemented.
+                if (!prev->twin()->prev()->is_primary()) {
+                  printf("from prev twin prev non-primary\n");
+                  prev->twin()->foot(prev->twin()->prev()->vertex0()->x(),
+                                     prev->twin()->prev()->vertex0()->y()
+                                    );       
+                }
+                else {
+                  double x = prev->next()->vertex1()->x();
+                  double y = prev->next()->vertex1()->y();
+                  if (!edge->is_curved()) {
+                    double x0 = edge->vertex0()->x();
+                    double y0 = edge->vertex0()->y();
+                    double x1 = edge->vertex1()->x();
+                    double y1 = edge->vertex1()->y();
+                    reflect(x, y, x0, y0, x1, y1);
+                    prev->twin()->foot(x, y);
+                    printf("reflect foot for parabola\n");
+                  }                  
+                }
+              }
+            }
             // first make the clipped-out edges ahead link to themselves
             prev->next()->twin()->next(prev->next());
             prev->next()->prev(prev->next()->twin());
@@ -698,6 +991,32 @@ class medial_axis {
           // corner - end touches polygon, so turn around
           edge_type * prev = edge;
           edge = edge->twin();
+          // figure feet
+          double footx = prev->vertex0()->x() + prev->vertex0()->r();
+          double footy = prev->vertex0()->y();
+          // This should always come out <= 1 and > 0.
+          // Sometimes it spills over just beyond 1 in the case of 
+          // a corner so shallow it's practically flat.
+          // So snap to 1 if > 1.
+          double for_acos = prev->vertex0()->r() 
+            / sqrt(pow(prev->vertex1()->x() - prev->vertex0()->x(),2)
+                 + pow(prev->vertex1()->y() - prev->vertex0()->y(),2)
+                  );
+          if (for_acos > 1) { for_acos = 1; }
+          double phi = acos( for_acos );
+
+          rotate_2d(footx, footy, theta + phi, prev->vertex0()->x(), 
+                                               prev->vertex0()->y()
+          );
+          prev->foot(footx, footy);
+
+          rotate_2d(footx, footy, -2*phi, prev->vertex0()->x(), 
+                                          prev->vertex0()->y()
+          );
+          edge->next()->foot(footx, footy);
+
+          edge->foot(edge->vertex0()->x(), edge->vertex0()->y());
+
           // first connect edges ahead to eachother
           prev->next()->prev(edge->prev());
           edge->prev()->next(prev->next());
@@ -719,6 +1038,76 @@ class medial_axis {
         }
       }
     }
+
+    // Restore color() == 0 for internal edges.
+    for (edge_iterator it = edges_.begin(); it != edges_.end(); ++it) {
+      if (it->color() == 2) {
+        it->color(0);
+      }
+    }
+
+    // add some missing feet
+    start_edge = NULL;
+    for (edge_iterator it = edges_.begin(); it != edges_.end(); ++it) {
+      if (it->color() == 0
+          && it->is_primary()
+         ) {
+        start_edge = &(*it);
+        break;
+      }
+    }
+    while (start_edge != NULL) {
+      edge_type * edge = start_edge;
+      do {
+        if (!edge->foot()
+           && edge->next()->foot()
+           && edge->color() == 0
+           && edge->is_primary()
+           ) {
+           
+          if (edge->cell()->contains_point()) {
+          edge->foot(edge->next()->foot()->x(), edge->next()->foot()->y());
+          }
+          else {
+            double x  = edge->vertex0()->x();
+            double y  = edge->vertex0()->y();
+            double x0 = edge->next()->foot()->x();
+            double y0 = edge->next()->foot()->y();
+            double x1 = edge->next()->vertex0()->x();
+            double y1 = edge->next()->vertex0()->y();
+            rotate_2d(x1, y1, 3.14159/2, x0, y0);
+            makefoot(x, y, x0, y0, x1, y1);
+            edge->foot(x, y);
+          }
+          //printf("fixed missing foot for consecutive linear edges\n");
+          if (! edge->prev()->foot()
+              && ( !edge->prev()->is_curved()
+                 || edge->prev()->cell()->contains_point() )
+              && (edge->prev()->color() == 0 || edge->prev()->color() == 2)
+              && edge->prev()->is_primary()) {
+            edge = edge->prev();
+            edge->color(0);
+            edge = edge->prev();
+            edge->color(0);
+          }
+        }
+        // mark visited internal edges (will restore to 0 afterward)
+        edge->color(2);
+        edge = edge->next();
+      } while (edge != start_edge && edge->color() != 2);
+      
+      // After the first run, any further runs are following internal hole 
+      // loops. Find the first edge of the first/next hole.
+      start_edge = NULL;
+      for (edge_iterator it = edges_.begin(); it != edges_.end(); ++it) {
+        if (it->color() == 0
+            && it->is_primary()
+           ) {
+          start_edge = &(*it);
+          break;
+        }
+      }
+    }
     
     // Restore color() == 0 for internal edges.
     for (edge_iterator it = edges_.begin(); it != edges_.end(); ++it) {
@@ -727,6 +1116,23 @@ class medial_axis {
       }
     }
 
+    // check for any missing feet
+    for (edge_iterator it = edges_.begin(); it != edges_.end(); ++it) {
+      if (it->color() == 0
+          && it->is_primary()
+         ) {
+        if (!it->foot()) {
+          //croak("\nNO FOOT\n\n");          
+          printf("NO FOOT\n");
+          // For debugging, put in placeholders for missing feet 
+          // in some rediculous location, so we can still get some kind of 
+          // output without a segfault.
+          it->foot(-1000000,-1000000);
+          }
+      }
+    } 
+
+    
     // Debug reporting
     /*
     if (0) {
@@ -792,6 +1198,19 @@ class medial_axis {
 
   // Remove degenerate edge.
   void remove_edge(edge_type* edge) {
+    
+    // Are these two ifs necessary?
+    // Put these in for debugging, where the problem was something else,
+    // but these do fill in/transfer some missing feet.
+    // After revising the foot-finding (trying to do it all in the sweepline
+    // event processing), see if these are still needed.
+    if (edge->foot() && !edge->next()->foot()) {
+      edge->next()->foot(edge->foot()->x(), edge->foot()->y());
+    }
+    if (edge->twin()->foot() && !edge->twin()->next()->foot()) {
+      edge->twin()->next()->foot(edge->twin()->foot()->x(), edge->twin()->foot()->y());
+    }
+
     // Update the endpoints of the incident edges to the second vertex.
     vertex_type* vertex = edge->vertex0();
     edge_type* updated_edge = edge->twin()->rot_next();
@@ -799,7 +1218,7 @@ class medial_axis {
       updated_edge->vertex0(vertex);
       updated_edge = updated_edge->rot_next();
     }
-
+    
     edge_type* edge1 = edge;
     edge_type* edge2 = edge->twin();
 
@@ -814,6 +1233,7 @@ class medial_axis {
     edge2_rot_prev->prev(edge1_rot_next->twin());
     edge1_rot_prev->prev(edge2_rot_next->twin());
     edge2_rot_next->twin()->next(edge1_rot_prev);
+
   }
 
   void mark_exterior(edge_type* edge) {
@@ -825,31 +1245,26 @@ class medial_axis {
     edge->cell()->color(1);
     edge->twin()->cell()->color(1);
     vertex_type* v = edge->vertex1();
+    if (!v) {v = edge->vertex0();}
     if (v == NULL || !edge->is_primary()) {
       return;
     }
     v->color(1);
     edge_type* e = v->incident_edge();
     do {
-      if (! ( !e->is_primary() && 
-              (!e->rot_next()->is_primary() || !e->rot_prev()->is_primary()) 
-            )
-        ) {
-        mark_exterior(e);
-      }
+      mark_exterior(e);
       e = e->rot_next();
     } while (e != v->incident_edge());
   }
 
   void mark_interior(edge_type* edge, bool backward = false) {
-    //if (edge->color() == 0) {
-    //  return;
-    //}
+    // This function seems to work as intended, though it's still
+    // on probation. The conditionals in the do {} while(); might not all be
+    // correct or necessary (or they might be). 
     edge->color(0);
     edge->twin()->color(0);
     vertex_type* v = edge->vertex0();
-    edge_type* e = v->incident_edge();
-
+    edge_type* e;
     if (edge->is_curved()) {
       edge_type* start_e = (edge->cell()->contains_point()) ? edge : edge->twin();
       e = start_e;
@@ -865,13 +1280,11 @@ class medial_axis {
     if (!backward) {
       v = edge->vertex1();
     } 
-    //else {
-    //  //v = edge->prev()->vertex0();
-    //  v = edge->vertex0();
-    //}
-    //if (!edge->is_primary()) {
-    //  return;
-    //}
+
+    if (!v) {
+      return;
+    }
+    e = v->incident_edge();
     v->color(0);
     e = v->incident_edge();
     do {
@@ -895,11 +1308,47 @@ class medial_axis {
     } while (e != v->incident_edge());
   }
 
-  bool edge_source_sort(edge_type & a, edge_type & b) {
-    return (a.cell()->source_index() < b.cell()->source_index());
+  bool is_exterior (const edge_type& e) { return (e->color() != 0); }
+
+  void rotate_2d(double &x, double &y, const double theta, const double xo = 0, const double yo = 0) {
+    double xp;
+    x -= xo;
+    y -= yo;
+    xp = (x * cos(theta) - y * sin(theta)) + xo;
+    y  = (y * cos(theta) + x * sin(theta)) + yo;
+    x  = xp;
+  }
+  template <typename CT>
+  void reflect(CT &x, CT &y, const CT x0, const CT y0, const CT x1, const CT y1) {
+    double dy = (double) (y1 - y0);
+    double dx = (double) (x1 - x0);
+    if (dy == 0 && dx == 0) {return;}
+    double theta = atan2(dy, dx);
+    rotate_2d(x, y, -theta, x0, y0);
+    y -= y0;
+    y *= -1.0;
+    y += y0;
+    rotate_2d(x, y, theta, x0, y0);
   }
 
-  bool is_exterior (const edge_type& e) { return (e->color() != 0); }
+void makefoot(double & x, double & y, const double x0, const double y0,
+                                      const double x1, const double y1) {
+    // infinite slope case first
+    if (x1 - x0 == 0) {
+        x = x0;
+    } else {
+      double m  = (y1 - y0)/(x1 - x0);
+      if (m == 0) {
+          y = y0;
+      }
+      else {
+        double intersect_x = ((m * x0) - y0 + ((1 / m) * x) + (y)) / (m + (1 / m));
+          double intersect_y = -(x0 - intersect_x) * m + y0;
+            x = intersect_x;
+            y = intersect_y;
+      }
+    }
+  }
 
   cell_container_type cells_;
   vertex_container_type vertices_;
