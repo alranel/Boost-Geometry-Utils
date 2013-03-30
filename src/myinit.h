@@ -17,9 +17,11 @@
 #include <boost/geometry/geometries/adapted/boost_polygon.hpp>
 #include <boost/polygon/voronoi.hpp>
 
-/* Using boost::polygons's point type with the boost::geometry adapter lets   */
-/* us freely pass points around between the two libraries.                    */
-typedef boost::polygon::point_data<int> point_xy;
+/* Use Perl's IV as the point coordinate type. */
+typedef boost::geometry::model::d2::point_xy<IV> point_xy;
+/* Boost::Polygon::Voronoi's default config calls for 32 bit integer input. */
+typedef boost::polygon::point_data<I32> bp_point_xy;
+
 typedef boost::geometry::model::polygon<point_xy,false,false> polygon;
 typedef boost::geometry::model::linestring<point_xy> linestring;
 typedef boost::geometry::model::multi_linestring<linestring> multi_linestring;
