@@ -19,19 +19,27 @@ static const unsigned int TWINS_PROCESSED = (unsigned int) 8;
 typedef double CT;
 typedef double AT;
 
-void rotate_2d(CT x, CT y, const AT theta, const CT xo=0, const CT yo=0) {
-  CT xp;
+double pi = 4*atan2(1,1);
+
+
+void rotate_2d(double &x, double &y, const double theta, const double xo = 0, const double yo = 0) {
+  double xp;
   x -= xo;
   y -= yo;
-  xp = x * cos(theta) - y * sin(theta) + xo;
-  y  = y * cos(theta) + x * sin(theta) + yo;
+  xp = (x * cos(theta) - y * sin(theta)) + xo;
+  y  = (y * cos(theta) + x * sin(theta)) + yo;
   x  = xp;
 }
-
-void reflect(CT x, CT y, const CT x0, const CT y0, const CT x1, const CT y1) {
-  double theta = atan2(y1 - y0, x1 - x0);
+template <typename CT>
+void reflect_point_about_line(CT &x, CT &y, const CT x0, const CT y0, const CT x1, const CT y1) {
+  double dy = (double) (y1 - y0);
+  double dx = (double) (x1 - x0);
+  if (dy == 0 && dx == 0) {return;}
+  double theta = atan2(dy, dx);
   rotate_2d(x, y, -theta, x0, y0);
-  y *= -1;
+  y -= y0;
+  y *= -1.0;
+  y += y0;
   rotate_2d(x, y, theta, x0, y0);
 }
 
@@ -52,180 +60,190 @@ medial_axis2perl(const VD &vd, const bool internal_only = true) {
   AV* vertices_out = newAV();
   av_extend(vertices_out, vd.num_vertices() - 1);
 
+  // lookup tables used in recreating the medial axis data structure for perl
   std::map<const VD::edge_type*, AV*> thisToThis;
+  std::map<const VD::edge_type*, AV*> thisToTwin;
   std::map<const VD::edge_type*, AV*> thisToNext;
   std::map<const VD::edge_type*, AV*> thisToPrev;
   std::map<const VD::vertex_type*, AV*> vertToAV;
 
   std::size_t count = 0;
   
+  const VD::edge_type* start_edge = NULL;
   for (VD::const_edge_iterator it = vd.edges().begin(); it != vd.edges().end(); ++it) {
+    // Get the primary edge corresponding to the first input
+    // segment, which should be the first segment of the outer contour
+    // of a polygon with holes.
+    if (!(it->color() & EXTERNAL_COLOR) && it->cell()->source_index() == 0 && it->is_primary()) {
+      start_edge = &(*it);
+      break;
+    }
+  }
+  
+  while (start_edge != NULL) {
+    const VD::edge_type* it = start_edge;
+    do {
 
-    // For all primary edges, calculate:
-    //   theta = direction of the edge
-    //     phi = direction to polygon edge, as deflection from theta
-    // ... also need some kind of parabola parameter for the curved edges
-    // which replaces all the non-primary edges related to curved edges.
+      // For all primary edges, calculate:
+      //   theta = direction of the edge
+      //     phi = direction to polygon edge, as deflection from theta
+      //           (although in practice that may not be the most practical
+      //            so might change that to just the plain angle, or vector...)
+      //
+      // TODO: also need some kind of parabola parameter for the curved edges
+      // which replaces all the non-primary edges related to curved edges.
+      // A convenient parameter for display is just the quadratic bezier
+      // control point, which occures at the intersection of the tangent lines
+      // at the two ends of the curved edge - easy to feed that to SVG path.
+      // It's not clear it that's the best parameterization for working out 
+      // sampled toolpaths though.
 
-    double theta = 0;
-    double phi = 0;
+      double theta = 0;
+      double phi = 0;
 
-    if (it->is_primary() && it->is_finite()
-        && (!internal_only || !(it->color() & EXTERNAL_COLOR))
-       ) {
+      if (it->is_primary() && it->is_finite()
+          && (!internal_only || !(it->color() & EXTERNAL_COLOR))
+         ) {
+        
+        double edx = (double) it->vertex1()->x() - it->vertex0()->x();
+        double edy = (double) it->vertex1()->y() - it->vertex0()->y();
+        //vector or angle?
+        //double eh = sqrt(pow(edx, 2) + pow(edy, 2));
+
+        // assumes edge is straight
+        // TODO: generate proper instantaneous theta at start of curved edges
+        theta = atan2(edy, edx);
+
+        // now calculate phi
+        double tdx = (double) it->foot()->x() - it->vertex0()->x();
+        double tdy = (double) it->foot()->y() - it->vertex0()->y();
+        
+        if (it->prev() == it->twin()) {
+          tdx = (double) it->next()->foot()->x() - it->next()->vertex0()->x();
+          tdy = (double) it->next()->foot()->y() - it->next()->vertex0()->y();
+        }
+
+        if (tdx == 0 && tdy == 0) {phi = theta;}
+        else {phi = atan2(tdy, tdx) - theta;}
+
+        // need to sort out when/if to do angle reduction
+        // or whether to use vectors instead
+        //double pi = 4*atan2(1,1);
+        //while (phi >  pi) {phi-=2*pi;}
+        //while (phi < -pi) {phi+=2*pi;}
+
+      }
       
-      double edx = (double) it->vertex1()->x() - it->vertex0()->x();
-      double edy = (double) it->vertex1()->y() - it->vertex0()->y();
-      //vector or angle?
-      //double eh = sqrt(pow(edx, 2) + pow(edy, 2));
+      // load up perl data
 
-      theta = atan2(edy, edx);
+      if (!(it->color() & TWINS_PROCESSED)
+          && it->is_primary()
+          && !(it->color() & EXTERNAL_COLOR)
+         ) {
+        std::size_t ec1 = it->color();
+        it->color(ec1 | TWINS_PROCESSED);
+
+        // Make the edge AV
+        AV* edgeav      = newAV();
+        av_store(edges_out, count++, newRV_noinc((SV*) edgeav));
+
+        // Process each vertex just once, the first time we see it.
+        // Each vertex gets one edge reference -
+        // doesn't matter which, so the first.
+        // Ray edges have NULL vertices, so always check for that.
+
+        if (it->vertex0() && !(it->vertex0()->color() & TWINS_PROCESSED)) {
+          if (it->vertex0()) {
+            std::size_t vc1 = it->vertex0()->color();
+            it->vertex0()->color(vc1 | TWINS_PROCESSED);
+            AV* pointav     = newAV();
+            vertToAV[it->vertex0()] = pointav;
+            av_push(vertices_out, newRV_noinc((SV*) pointav));
+            av_fill(pointav,     3);
+            av_store_point_xy(pointav,     it->vertex0()->x(),         it->vertex0()->y());
+            av_store(pointav,     2, newSVnv(it->vertex0()->r()));
+            av_store(pointav,     3, newRV_inc((SV*) edgeav));
+          }
+        }
+
+        // fill in edge data
+        av_fill(edgeav,     10);
+        // cell ref - index corresponding to original segment input
+        av_store(edgeav,     0, newSVuv(it->cell()->source_index()));
+        // start vertex ref (rays coming in from infinity don't have one)
+        if (it->vertex0()) {
+          if (vertToAV[it->vertex0()]) {
+            av_store(edgeav,     1, newRV_inc((SV*) vertToAV[it->vertex0()]));
+          }
+        } 
+        
+        // indeces 2, 3 and 4 are for twin, next and prev edges, 
+        // to be filled in later
+        
+        // edge direction
+        av_store(edgeav,     5, newSVnv(theta));
+        // radius direction to source segment, as rotation from edge direction
+        av_store(edgeav,     6, newSVnv(phi));
+        // is it a parabolic curve?
+        av_store(edgeav,     7, newSViv(        it->is_curved() ? 1 : 0));
+        // is it primary?
+        av_store(edgeav,     8, newSViv(        it->is_primary() ? 1 : 0));
+        // is it internal?
+        int intr1 = (        it->color() - TWINS_PROCESSED > 0) ? 0 : 1;
+        av_store(edgeav,     9, newSViv(intr1));
+
+        // an edge's start vertex, with it's radius, and the edge's angle phi
+        // are enough to calculate the foot. So including the foot in the data
+        // structure is redundant. But until we see what's most practical in
+        // use, we'll include the foot too. Besides, it helps with dev and debug
+        // visualizations.
+        
+        if (it->foot()) {
+          AV* footav     = newAV();
+          av_fill(footav,     1);
+          av_store_point_xy(footav, it->foot()->x(), it->foot()->y());
+          av_store(edgeav,     10, newRV_inc((SV*) footav));
+        }
+        
+        // fill in the lookup tables to finish off the data structure in a 
+        // second pass through the edge list, after this loop is done
+        thisToThis[it]                 = edgeav;
+        thisToTwin[it->twin()]         = edgeav;
+        thisToNext[it->prev()]         = edgeav;
+        thisToPrev[it->next()]         = edgeav;
+      }
       
-      double tdx = 1;
-      double tdy = 1;
-      if (!it->rot_next()->is_primary() && it->rot_next()->is_finite()) {
-        it->foot(it->rot_next()->vertex1()->x(), it->rot_next()->vertex1()->y());
-        tdx = (double) it->foot().x() - it->rot_next()->vertex0()->x();
-        tdy = (double) it->foot().y() - it->rot_next()->vertex0()->y();
+      it = it->next();
+      
+    } while (it != start_edge);
+    
+    
+    start_edge = NULL;
+    for (VD::const_edge_iterator it = vd.edges().begin(); it != vd.edges().end(); ++it) {
+      if (
+          !(it->color() & TWINS_PROCESSED)
+          && it->is_primary()
+          && !(it->color() & EXTERNAL_COLOR)
+         ) {
+        start_edge = &(*it);
+        break;
       }
-      else if (!it->rot_prev()->is_primary() && it->rot_prev()->is_finite()) {
-        it->foot(it->rot_prev()->vertex1()->x(), it->rot_prev()->vertex1()->y());
-        tdx = (double) it->foot().x() - it->rot_prev()->vertex0()->x();
-        tdy = (double) it->foot().y() - it->rot_prev()->vertex0()->y();
-
-      }
-      else if (!it->twin()->rot_next()->is_primary() && it->twin()->rot_next()->is_finite()) {
-        double x = it->twin()->rot_next()->vertex1()->x();
-        double y = it->twin()->rot_next()->vertex1()->y();
-        reflect(x, y, it->vertex0()->x(), it->vertex0()->y(), 
-                      it->vertex1()->x(), it->vertex1()->y()
-               );
-        it->foot(x, y);
-        tdx = (double) it->foot().x() - it->twin()->rot_next()->vertex0()->x();
-        tdy = (double) it->foot().y() - it->twin()->rot_next()->vertex0()->y();
-      }
-      else if (!it->twin()->rot_prev()->is_primary() && it->twin()->rot_prev()->is_finite()) {
-        double x = it->twin()->rot_prev()->vertex1()->x();
-        double y = it->twin()->rot_prev()->vertex1()->y();
-        reflect(x, y, it->vertex0()->x(), it->vertex0()->y(), 
-                      it->vertex1()->x(), it->vertex1()->y()
-               );
-        it->foot(x, y);
-        tdx = (double) it->foot().x() - it->twin()->rot_prev()->vertex0()->x();
-        tdy = (double) it->foot().y() - it->twin()->rot_prev()->vertex0()->y();
-      }
-      // does all that capture every case?
-
-      phi = atan2(tdy, tdx);
-
     }
     
-    // load up perl data
-
-    if (!(it->color() & TWINS_PROCESSED)
-        && it->is_primary()
-        && !(it->color() & EXTERNAL_COLOR)
-       ) {
-      std::size_t ec1 = it->color();
-      std::size_t ec2 = it->twin()->color();
-      it->color(ec1 | TWINS_PROCESSED);
-      it->twin()->color(ec2 | TWINS_PROCESSED);
-
-      // Make the two edge AVs
-      AV* edgeav      = newAV();
-      AV* edgeavtwin  = newAV();
-      av_store(edges_out, count++, newRV_noinc((SV*) edgeav));
-      av_store(edges_out, count++, newRV_noinc((SV*) edgeavtwin));
-
-      // Process each vertex just once, the first time we see it.
-      // Each vertex gets one edge reference -
-      // doesn't matter which, so the first.
-      // Ray edges have NULL vertices, so always check for that.
-
-      if (  (        &(*it->vertex0()) && !(        it->vertex0()->color() & TWINS_PROCESSED))
-         || (&(*it->twin()->vertex0()) && !(it->twin()->vertex0()->color() & TWINS_PROCESSED))
-          ) {
-        if (&(*it->vertex0())) {
-          std::size_t vc1 = it->vertex0()->color();
-          it->vertex0()->color(vc1 | TWINS_PROCESSED);
-          AV* pointav     = newAV();
-          vertToAV[&(*it->vertex0())] = pointav;
-          av_push(vertices_out, newRV_noinc((SV*) pointav));
-          av_fill(pointav,     3);
-          av_store_point_xy(pointav,     it->vertex0()->x(),         it->vertex0()->y());
-          av_store(pointav,     2, newSVnv(it->vertex0()->r()));
-          av_store(pointav,     3, newRV_inc((SV*) edgeav));
-        }
-        if (&(*it->twin()->vertex0())) {
-          std::size_t vc2 = it->twin()->vertex0()->color();
-          it->twin()->vertex0()->color(vc2 | TWINS_PROCESSED);
-          AV* pointavtwin = newAV();
-          vertToAV[&(*it->twin()->vertex0())] = pointavtwin;
-          av_push(vertices_out, newRV_noinc((SV*) pointavtwin));
-          av_fill(pointavtwin, 3);
-          av_store_point_xy(pointavtwin, it->twin()->vertex0()->x(), it->twin()->vertex0()->y());
-          av_store(pointavtwin, 2, newSVnv(it->twin()->vertex0()->r()));
-          av_store(pointavtwin, 3, newRV_inc((SV*) edgeavtwin));
-        }
-      }
-
-      // fill in edge data
-      av_fill(edgeav,     9);
-      av_fill(edgeavtwin, 9);
-      // cell ref - index corresponding to original segment input
-      av_store(edgeav,     0, newSVuv(it->cell()->source_index()));
-      av_store(edgeavtwin, 0, newSVuv(it->twin()->cell()->source_index()));
-      // start vertex ref (rays coming in from infinity don't have one)
-      if (&(*it->vertex0())) {
-        if (vertToAV[&(*it->vertex0())]) {
-          av_store(edgeav,     1, newRV_inc((SV*) vertToAV[&(*it->vertex0())]));
-        }
-      } 
-      if (&(*it->twin()->vertex0())) {
-        if (vertToAV[&(*it->twin()->vertex0())]) {
-          av_store(edgeavtwin, 1, newRV_inc((SV*) vertToAV[&(*it->twin()->vertex0())]));
-        }
-      }
-      // twin ref
-      av_store(edgeav,     2, newRV_inc((SV*) edgeavtwin));
-      av_store(edgeavtwin, 2, newRV_inc((SV*) edgeav));
-      // indeces 3 and 4 are for next and prev edges, to be filled in later
-      // edge direction
-      av_store(edgeav,     5, newSVnv(theta));
-      av_store(edgeavtwin, 5, newSVnv(theta));
-      // radius direction to source segment, as rotation from edge direction
-      av_store(edgeav,     6, newSVnv(phi));
-      av_store(edgeavtwin, 6, newSVnv(phi));
-      // is it a parabolic curve?
-      av_store(edgeav,     7, newSViv(        it->is_curved() ? 1 : 0));
-      av_store(edgeavtwin, 7, newSViv(it->twin()->is_curved() ? 1 : 0));
-      // is it primary?
-      av_store(edgeav,     8, newSViv(        it->is_primary() ? 1 : 0));
-      av_store(edgeavtwin, 8, newSViv(it->twin()->is_primary() ? 1 : 0));
-      // is it internal?
-      int intr1 = (        it->color() - TWINS_PROCESSED > 0) ? 0 : 1;
-      int intr2 = (it->twin()->color() - TWINS_PROCESSED > 0) ? 0 : 1;
-      av_store(edgeav,     9, newSViv(intr1));
-      av_store(edgeavtwin, 9, newSViv(intr2));
-
-      // Storing next/prev references (indeces 3 and 4) will have to wait until
-      // we've processed all edges. Make the lookup tables for that.
-      thisToThis[&(*it)]                 = edgeav;
-      thisToNext[&(*it->prev())]         = edgeav;
-      thisToPrev[&(*it->next())]         = edgeav;
-      thisToThis[&(*it->twin())]         = edgeavtwin;
-      thisToNext[&(*it->twin()->prev())] = edgeavtwin;
-      thisToPrev[&(*it->twin()->next())] = edgeavtwin;
-    }   
   }
 
+  // fill in all the edge-to-edge references from the lookup tables
   for (VD::const_edge_iterator it = vd.edges().begin(); it != vd.edges().end(); ++it) {
     if (it->is_primary() && !(it->color() & EXTERNAL_COLOR)) {
       const VD::edge_type* ep = &(*it);
       AV* edgeav     = thisToThis[ep];
+      AV* edgeavtwin = thisToTwin[ep];
       AV* edgeavnext = thisToNext[ep];
       AV* edgeavprev = thisToPrev[ep];
 
+      if (edgeavtwin != NULL) {
+        av_store(edgeav, 2, newRV_inc((SV*) edgeavtwin));
+      }
       if (edgeavnext != NULL) {
         av_store(edgeav, 3, newRV_noinc((SV*) edgeavnext));
       }
@@ -234,6 +252,7 @@ medial_axis2perl(const VD &vd, const bool internal_only = true) {
       }
     }
   }
+
 
   // Debug report
   /*
@@ -282,13 +301,16 @@ void builder_segments_from_ring(const RingLike &my_ring, VBT & vb) {
   BOOST_AUTO(end, boost::end(my_ring));
   BOOST_AUTO(previous, it);
   for (it++; it != end; ++previous, ++it) {
-    const bp_segment s( *previous, *it );
+    const bp_segment s( bp_point_xy(previous->get<0>(),previous->get<1>()), 
+                        bp_point_xy(it->get<0>(), it->get<1>()) );
+    
     boost::polygon::insert( s, &vb );
   }
   // If ring wasn't closed, add one more closing segment
   if (boost::size(my_ring) > 2) {
     if (boost::geometry::disjoint(*boost::begin(my_ring), *(boost::end(my_ring) - 1))) {
-        const bp_segment s( *(end - 1), *boost::begin(my_ring) );
+        const bp_segment s( bp_point_xy((end - 1)->get<0>(),(end - 1)->get<1>()), 
+                            bp_point_xy(my_ring.begin()->get<0>(), my_ring.begin()->get<1>()) );
         boost::polygon::insert( s, &vb );
     }
   }
