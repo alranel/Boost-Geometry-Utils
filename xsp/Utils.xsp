@@ -129,6 +129,11 @@ polygon_medial_axis(my_polygon)
   CODE:
     boost::polygon::default_voronoi_builder builder;
     boost::polygon::medial_axis<double> ma;
+    // TODO: Should probably have a direct perl2segments typemap
+    //       for input. It should take extra step of making sure
+    //       input ints are all what will fit in 32 bits, since
+    //       that's the default int size right now for the
+    //       boost::polygon::voronoi setup.
     builder_segments_from_ring(my_polygon->outer(), builder);
     BOOST_FOREACH(ring r, my_polygon->inners()) { 
       builder_segments_from_ring(r, builder);
