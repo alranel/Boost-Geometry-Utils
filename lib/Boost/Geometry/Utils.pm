@@ -165,6 +165,8 @@ Corrects the orientation(s) of the given polygon.
 
 Corrects the orientation(s) of the given multi_polygon.
 
+=for Pod::Coverage linestring multi_linestring multi_polygon polygon
+
 =head1 ACKNOWLEDGEMENTS
 
 Thanks to mauke and mst (Matt S. Trout (cpan:MSTROUT) <mst@shadowcat.co.uk>)
