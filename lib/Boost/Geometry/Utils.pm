@@ -1,4 +1,7 @@
 package Boost::Geometry::Utils;
+{
+  $Boost::Geometry::Utils::VERSION = '0.07';
+}
 # ABSTRACT: Bindings for the Boost Geometry library
 use strict;
 use warnings;
@@ -49,6 +52,18 @@ sub multi_linestring {
 }
 
 1;
+
+
+__END__
+=pod
+
+=head1 NAME
+
+Boost::Geometry::Utils - Bindings for the Boost Geometry library
+
+=head1 VERSION
+
+version 0.07
 
 =head1 SYNOPSIS
 
@@ -165,10 +180,24 @@ Corrects the orientation(s) of the given polygon.
 
 Corrects the orientation(s) of the given multi_polygon.
 
+=for Pod::Coverage linestring multi_linestring multi_polygon polygon
+
 =head1 ACKNOWLEDGEMENTS
 
 Thanks to mauke and mst (Matt S. Trout (cpan:MSTROUT) <mst@shadowcat.co.uk>)
 for their valuable help in getting this to compile under Windows (MinGW) too.
 Thanks to Mark Hindness for his work on data types conversion.
 
+=head1 AUTHOR
+
+Alessandro Ranellucci <aar@cpan.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2013 by Alessandro Ranellucci.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
 =cut
+
