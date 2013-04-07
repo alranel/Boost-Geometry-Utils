@@ -48,12 +48,15 @@ use Boost::Geometry::Utils qw(polygon_multi_linestring_intersection
             [ [10, 15], [14, 15] ],
             [ [16, 15], [20, 15] ],
         ];
+        my $expected_noholes = [
+            [ [10, 15], [20, 15] ],
+        ];
         is_deeply polygon_multi_linestring_intersection([$square], $multilinestring),
-            $expected, 'multiple linestring clipping against polygon with no holes';
+            $expected_noholes, 'multiple linestring clipping against polygon with no holes';
         is_deeply polygon_multi_linestring_intersection($polygon, $multilinestring),
             $expected, 'multiple linestring clipping';
         is_deeply multi_polygon_multi_linestring_intersection([[$square]], $multilinestring),
-            $expected, 'multiple linestring clipping against multiple polygons with no holes';
+            $expected_noholes, 'multiple linestring clipping against multiple polygons with no holes';
         is_deeply multi_polygon_multi_linestring_intersection([$polygon], $multilinestring),
             $expected, 'multiple linestring clipping against multiple polygons';
     }
