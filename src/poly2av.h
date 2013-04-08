@@ -83,7 +83,7 @@ int add_ring(AV* theAv, polygon& poly, const int ring_index)
     elem = av_fetch(theAv, i, 0);
     if (!SvROK(*elem)
         || SvTYPE(SvRV(*elem)) != SVt_PVAV
-        || av_len((AV*)SvRV(*elem)) < 1)
+        || av_len((AV*)SvRV(*elem)) != 1)  // require two coordinates per point
     {
       return 0;
     }
@@ -113,7 +113,7 @@ perl2polygon(pTHX_ AV* theAv)
         elem = av_fetch(theAv, i, 0);
         if (!SvROK(*elem)
             || SvTYPE(SvRV(*elem)) != SVt_PVAV
-            || av_len((AV*)SvRV(*elem)) < 1)
+            || av_len((AV*)SvRV(*elem)) < 1)  // require at least two points in ring
         {
             delete retval;
             return NULL;
@@ -141,7 +141,7 @@ perl2multi_polygon(pTHX_ AV* theAv)
         elem = av_fetch(theAv, i, 0);
         if (!SvROK(*elem)
             || SvTYPE(SvRV(*elem)) != SVt_PVAV
-            || av_len((AV*)SvRV(*elem)) < 1)
+            || av_len((AV*)SvRV(*elem)) < 0)  // require at least one polygon
         {
             delete retval;
             return NULL;
