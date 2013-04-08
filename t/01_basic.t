@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 26;
+use Test::More tests => 30;
 use Boost::Geometry::Utils qw(polygon_multi_linestring_intersection
                               multi_polygon_multi_linestring_intersection
                               point_within_polygon point_covered_by_polygon
@@ -59,6 +59,18 @@ use Boost::Geometry::Utils qw(polygon_multi_linestring_intersection
             $expected_noholes, 'multiple linestring clipping against multiple polygons with no holes';
         is_deeply multi_polygon_multi_linestring_intersection([$polygon], $multilinestring),
             $expected, 'multiple linestring clipping against multiple polygons';
+    }
+    
+    for my $factor (10, 100, 1000, 10000) {
+        my $polygon = [
+            [ [50000000,85355480], [14644519,50000000], [50000000,14644519], [85355480,50000000] ],
+        ];
+        my $line = [ [16369660,85355339], [16369660,14644660] ];
+        @$_ = (int $_->[0]/$factor, int $_->[1]/$factor) for @{$polygon->[0]}, @$line;
+        
+        my $intersection = polygon_multi_linestring_intersection($polygon, [$line]);
+        isnt linestring_length($line), linestring_length($intersection->[0]),
+            "linestring clipping with large coordinates";
     }
 
     {
