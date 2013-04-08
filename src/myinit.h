@@ -15,7 +15,7 @@
 #include <boost/geometry/multi/geometries/multi_polygon.hpp>
 #include <boost/geometry/io/wkt/wkt.hpp>
 
-typedef boost::geometry::model::d2::point_xy<int> point_xy;
+typedef boost::geometry::model::d2::point_xy<double> point_xy;
 typedef boost::geometry::model::polygon<point_xy,false,false> polygon;
 typedef boost::geometry::model::multi_polygon<polygon> multi_polygon;
 typedef boost::geometry::model::linestring<point_xy> linestring;
@@ -30,13 +30,13 @@ typedef boost::geometry::model::multi_linestring<linestring> omultilinestring;
 
 // for av_fetch, use SvIV() 
 // this library then supports 64 bit ints.
-#define av_fetch_x(AV) SvIV(*av_fetch(AV, 0, 0))
-#define av_fetch_y(AV) SvIV(*av_fetch(AV, 1, 0))
+#define av_fetch_x(AV) SvNV(*av_fetch(AV, 0, 0))
+#define av_fetch_y(AV) SvNV(*av_fetch(AV, 1, 0))
 
 // for av_store, use newSViv()
 #define av_store_point_xy(AV, X, Y)              \
-  av_store(AV, 0, newSViv(X));                   \
-  av_store(AV, 1, newSViv(Y))
+  av_store(AV, 0, newSVnv(X));                   \
+  av_store(AV, 1, newSVnv(Y))
 
 #define av_fetch_point_xy(AV)                    \
   make<point_xy>(av_fetch_x(AV), av_fetch_y(AV))
