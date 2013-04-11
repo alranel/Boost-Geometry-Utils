@@ -3639,3 +3639,4 @@ t/release-pod-syntax.t
 xsp/mytype.map
 xsp/typemap.xspt
 xsp/Utils.xsp
+META.json

@@ -11,14 +11,17 @@ configure_requires:
   ExtUtils::CppGuess: 0.07
   Module::Build: 0.38
   Module::Build::WithXSpp: 0.10
-dynamic_config: 0
-generated_by: 'Dist::Zilla version 4.300010, CPAN::Meta::Converter version 2.120630'
+dynamic_config: 1
+generated_by: 'Module::Build version 0.38, CPAN::Meta::Converter version 2.120630'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
   version: 1.4
 name: Boost-Geometry-Utils
+provides:
+  Boost::Geometry::Utils:
+    file: lib/Boost/Geometry/Utils.pm
+    version: 0.08
 resources:
-  bugtracker: https://github.com/alexrj/Boost-Geometry-Utils/issues
-  repository: git://github.com/alexrj/Boost-Geometry-Utils.git
-version: 0.07
+  license: http://dev.perl.org/licenses/
+version: 0.08
