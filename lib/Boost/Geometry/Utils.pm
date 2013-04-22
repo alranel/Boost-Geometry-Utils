@@ -18,7 +18,8 @@ our @EXPORT_OK = qw(polygon_to_wkt linestring_to_wkt wkt_to_multilinestring
     point_within_polygon point_covered_by_polygon linestring_simplify
     multi_linestring_simplify linestring_length polygon_centroid
     linestring_centroid multi_linestring_centroid multi_polygon
-    correct_polygon correct_multi_polygon);
+    correct_polygon correct_multi_polygon
+    polygon_medial_axis);
 
 sub polygon_to_wkt {
     sprintf 'POLYGON(%s)', join ',', map { sprintf '(%s)', join ',', map { join ' ', @$_ } @$_ } @_;

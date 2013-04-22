@@ -215,4 +215,20 @@ correct_multi_polygon(my_multi_polygon)
   OUTPUT:
     RETVAL
 
+SV*
+polygon_medial_axis(my_polygon)
+    polygon* my_polygon
+  CODE:
+    boost::polygon::default_voronoi_builder builder;
+    boost::polygon::medial_axis<double> ma;
+    // TODO: a direct perl2segments typemap with 32 bit int bounds checking
+    builder_segments_from_ring(my_polygon->outer(), builder);
+    BOOST_FOREACH(ring r, my_polygon->inners()) { 
+      builder_segments_from_ring(r, builder);
+    }
+    delete my_polygon;
+    builder.construct(&ma);
+    RETVAL = medial_axis2perl(ma);
+  OUTPUT:
+    RETVAL
 %}
