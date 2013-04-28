@@ -1,7 +1,6 @@
 #ifndef bgu_voronoi2perl_h_
 #define bgu_voronoi2perl_h_
 
-#include "voronoi_visual_utils.hpp"
 #include <cstdio>
 #include <map>
 #include <cmath>
@@ -19,7 +18,7 @@ static const unsigned int PROCESSED      = (unsigned int) 8;
 typedef double CT;
 typedef double AT;
 
-double pi = 4*atan2(1,1);
+double pi = 4 * atan2(1, 1);
 
 void rotate_2d(double &x, double &y, const double theta, const double xo = 0, const double yo = 0) {
   double xp;
@@ -104,12 +103,17 @@ medial_axis2perl(const VD &vd, const bool internal_only = true) {
           && (!internal_only || !(it->color() & EXTERNAL_COLOR))
          ) {
         
-        double edx = (double) it->vertex1()->x() - it->vertex0()->x();
-        double edy = (double) it->vertex1()->y() - it->vertex0()->y();
-
-        // assumes edge is straight
-        // TODO: generate proper instantaneous theta at start of curved edges
-        theta = atan2(edy, edx);
+        // calculate theta
+        if (it->is_curved()) {
+          theta = atan2( -(it->foot()->x()                 - it->vertex0()->x())
+                        + (it->twin()->next()->foot()->x() - it->vertex0()->x())
+                        , (it->foot()->y()                 - it->vertex0()->y())
+                        - (it->twin()->next()->foot()->y() - it->vertex0()->y())
+                       );
+        } else {
+          theta = atan2((double) it->vertex1()->y() - it->vertex0()->y(),
+                        (double) it->vertex1()->x() - it->vertex0()->x());
+        }
 
         // calculate phi
         double tdx = (double) it->foot()->x() - it->vertex0()->x();
@@ -123,11 +127,8 @@ medial_axis2perl(const VD &vd, const bool internal_only = true) {
         if (tdx == 0 && tdy == 0) {phi = theta;}
         else {phi = atan2(tdy, tdx) - theta;}
 
-        // need to sort out when/if to do angle reduction
-        // or whether to use vectors instead
-        //double pi = 4*atan2(1,1);
-        //while (phi >  pi) {phi-=2*pi;}
-        //while (phi < -pi) {phi+=2*pi;}
+        while (phi >  pi) {phi-=2*pi;}
+        while (phi < -pi) {phi+=2*pi;}
 
       }
       
