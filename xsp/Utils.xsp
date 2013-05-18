@@ -95,14 +95,14 @@ _multilinestring_to_wkt(mls)
     RETVAL
 
 multi_linestring*
-polygon_multi_linestring_intersection(my_polygon, my_linestring)
+polygon_multi_linestring_intersection(my_polygon, my_multi_linestring)
     polygon* my_polygon
-    multi_linestring* my_linestring
+    multi_linestring* my_multi_linestring
   CODE:
     RETVAL = new multi_linestring ();
-    boost::geometry::intersection(*my_polygon, *my_linestring, *RETVAL);
+    boost::geometry::intersection(*my_polygon, *my_multi_linestring, *RETVAL);
     delete my_polygon; // TODO: not sure if this is best place for this
-    delete my_linestring; // TODO: not sure if this is best place for this
+    delete my_multi_linestring; // TODO: not sure if this is best place for this
   OUTPUT:
     RETVAL
 

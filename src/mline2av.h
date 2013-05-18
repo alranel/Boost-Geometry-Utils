@@ -35,7 +35,7 @@ void add_line(AV* theAv, multi_linestring* mls)
   const unsigned int len = av_len(theAv)+1;
   SV** elem;
   AV* innerav;
-  linestring* ls = new linestring();
+  linestring ls;
   for (unsigned int i = 0; i < len; i++) {
     elem = av_fetch(theAv, i, 0);
     if (!SvROK(*elem)
@@ -45,9 +45,9 @@ void add_line(AV* theAv, multi_linestring* mls)
       return;
     }
     innerav = (AV*)SvRV(*elem);
-    ls->push_back(av_fetch_point_xy(innerav));
+    ls.push_back(av_fetch_point_xy(innerav));
   }
-  mls->push_back(*ls);
+  mls->push_back(ls);
 }
 
 multi_linestring*
