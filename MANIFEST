@@ -3,6 +3,7 @@ CHANGES
 lib/Boost/Geometry/Utils.pm
 LICENSE
 MANIFEST			This list of files
+META.json
 META.yml
 README
 src/boost/algorithm/string.hpp
@@ -2452,6 +2453,10 @@ src/boost/polygon/detail/property_merge.hpp
 src/boost/polygon/detail/property_merge_45.hpp
 src/boost/polygon/detail/rectangle_formation.hpp
 src/boost/polygon/detail/scan_arbitrary.hpp
+src/boost/polygon/detail/voronoi_ctypes.hpp
+src/boost/polygon/detail/voronoi_predicates.hpp
+src/boost/polygon/detail/voronoi_robust_fpt.hpp
+src/boost/polygon/detail/voronoi_structures.hpp
 src/boost/polygon/interval_concept.hpp
 src/boost/polygon/interval_data.hpp
 src/boost/polygon/interval_traits.hpp
@@ -2484,6 +2489,10 @@ src/boost/polygon/segment_data.hpp
 src/boost/polygon/segment_traits.hpp
 src/boost/polygon/segment_utils.hpp
 src/boost/polygon/transform.hpp
+src/boost/polygon/voronoi.hpp
+src/boost/polygon/voronoi_builder.hpp
+src/boost/polygon/voronoi_diagram.hpp
+src/boost/polygon/voronoi_geometry_type.hpp
 src/boost/preprocessor.hpp
 src/boost/preprocessor/arithmetic.hpp
 src/boost/preprocessor/arithmetic/add.hpp
@@ -3625,18 +3634,21 @@ src/boost/version.hpp
 src/boost/visit_each.hpp
 src/boost/weak_ptr.hpp
 src/line2av.h
+src/medial_axis.hpp
 src/mline2av.h
 src/myinit.h
 src/point2av.h
 src/poly2av.h
 src/ppport.h
+src/voronoi2perl.h
 t/00-compile.t
 t/01_basic.t
 t/02_old_api.t
 t/03_polygon.t
+t/04_medial_axis_basic.t
+t/05_medial_axis_visual.t
 t/release-pod-coverage.t
 t/release-pod-syntax.t
 xsp/mytype.map
 xsp/typemap.xspt
 xsp/Utils.xsp
-META.json
