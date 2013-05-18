@@ -149,6 +149,7 @@ perl2multi_polygon(pTHX_ AV* theAv)
         
         polygon* poly = perl2polygon(aTHX_ (AV*)SvRV(*elem));
         retval->push_back(*poly);
+        delete poly;
     }
     return retval;
 }

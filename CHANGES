@@ -4,6 +4,7 @@ Changes from 2012-03-31 00:00:00 +0000 to present.
 
     - Added multi_linestring_multi_polygon_difference()
     - Fixed memory leak in reading multi_linestring input
+    - Fixed memory leak in reading multi_polygon input
 
 -----------------------------------------
 version 0.09 at 2013-04-11
