@@ -118,6 +118,18 @@ multi_polygon_multi_linestring_intersection(my_multi_polygon, my_multi_linestrin
   OUTPUT:
     RETVAL
 
+multi_linestring*
+multi_linestring_multi_polygon_difference(my_multi_linestring, my_multi_polygon)
+    multi_linestring* my_multi_linestring
+    multi_polygon* my_multi_polygon
+  CODE:
+    RETVAL = new multi_linestring ();
+    boost::geometry::difference(*my_multi_linestring, *my_multi_polygon, *RETVAL);
+    delete my_multi_linestring; // TODO: not sure if this is best place for this
+    delete my_multi_polygon; // TODO: not sure if this is best place for this
+  OUTPUT:
+    RETVAL
+
 int
 point_within_polygon(my_point_xy, my_polygon)
     point_xy* my_point_xy

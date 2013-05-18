@@ -3,14 +3,15 @@
 use strict;
 use warnings;
 
-use Test::More tests => 30;
+use Test::More tests => 31;
 use Boost::Geometry::Utils qw(polygon_multi_linestring_intersection
                               multi_polygon_multi_linestring_intersection
                               point_within_polygon point_covered_by_polygon
                               linestring_simplify multi_linestring_simplify
                               linestring_length polygon_centroid linestring_centroid
                               multi_linestring_centroid correct_polygon
-                              correct_multi_polygon);
+                              correct_multi_polygon
+                              multi_linestring_multi_polygon_difference);
 
 {
     my $square = [  # ccw
@@ -59,6 +60,17 @@ use Boost::Geometry::Utils qw(polygon_multi_linestring_intersection
             $expected_noholes, 'multiple linestring clipping against multiple polygons with no holes';
         is_deeply multi_polygon_multi_linestring_intersection([$polygon], $multilinestring),
             $expected, 'multiple linestring clipping against multiple polygons';
+    }
+    
+    {
+        my $expected = [
+            [ [5,  15], [10, 15] ],
+            [ [14, 15], [16, 15] ],
+            [ [20, 15], [30, 15] ],
+            [ [40, 15], [50, 15] ],
+        ];
+        is_deeply multi_linestring_multi_polygon_difference($multilinestring, [$polygon]),
+            $expected, 'difference between multiple linestrings and multiple polygons';
     }
     
     for my $factor (10, 100, 1000, 10000) {

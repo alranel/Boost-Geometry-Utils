@@ -18,7 +18,7 @@ our @EXPORT_OK = qw(polygon_to_wkt linestring_to_wkt wkt_to_multilinestring
     point_within_polygon point_covered_by_polygon linestring_simplify
     multi_linestring_simplify linestring_length polygon_centroid
     linestring_centroid multi_linestring_centroid multi_polygon
-    correct_polygon correct_multi_polygon
+    correct_polygon correct_multi_polygon multi_linestring_multi_polygon_difference
     polygon_medial_axis);
 
 sub polygon_to_wkt {
@@ -122,6 +122,11 @@ object to perform multiple clippings in a single batch.
 
 Same as I<polygon_multi_linestring_intersection> but it accepts a multipolygon
 object to perform multiple clippings in a single batch.
+
+=head2 multi_linestring_multi_polygon_difference
+
+Performs a difference between the supplied multilinestring and the supplied
+multipolygon. It returns a multilinestring object.
 
 =head2 polygon_to_wkt
 
