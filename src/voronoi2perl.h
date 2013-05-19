@@ -306,16 +306,16 @@ void builder_segments_from_ring(const RingLike &my_ring, VBT & vb) {
   BOOST_AUTO(end, boost::end(my_ring));
   BOOST_AUTO(previous, it);
   for (it++; it != end; ++previous, ++it) {
-    const bp_segment s( bp_point_xy(previous->get<0>(),previous->get<1>()), 
-                        bp_point_xy(it->get<0>(), it->get<1>()) );
+    const bp_segment s( bp_point_xy(previous->template get<0>(),previous->template get<1>()), 
+                        bp_point_xy(it->template get<0>(), it->template get<1>()) );
     
     boost::polygon::insert( s, &vb );
   }
   // If ring wasn't closed, add one more closing segment
   if (boost::size(my_ring) > 2) {
     if (boost::geometry::disjoint(*boost::begin(my_ring), *(boost::end(my_ring) - 1))) {
-        const bp_segment s( bp_point_xy((end - 1)->get<0>(),(end - 1)->get<1>()), 
-                            bp_point_xy(my_ring.begin()->get<0>(), my_ring.begin()->get<1>()) );
+        const bp_segment s( bp_point_xy((end - 1)->template get<0>(),(end - 1)->template get<1>()), 
+                            bp_point_xy(my_ring.begin()->template get<0>(), my_ring.begin()->template get<1>()) );
         boost::polygon::insert( s, &vb );
     }
   }
