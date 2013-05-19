@@ -19,7 +19,7 @@ our @EXPORT_OK = qw(polygon_to_wkt linestring_to_wkt wkt_to_multilinestring
     multi_linestring_simplify linestring_length polygon_centroid
     linestring_centroid multi_linestring_centroid multi_polygon
     correct_polygon correct_multi_polygon multi_linestring_multi_polygon_difference
-    polygon_medial_axis);
+    polygon_medial_axis polygon_area);
 
 sub polygon_to_wkt {
     sprintf 'POLYGON(%s)', join ',', map { sprintf '(%s)', join ',', map { join ' ', @$_ } @$_ } @_;
@@ -185,6 +185,10 @@ Corrects the orientation(s) of the given polygon.
 =head2 correct_multi_polygon
 
 Corrects the orientation(s) of the given multi_polygon.
+
+=head2 polygon_area
+
+Returns the area of the given polygon.
 
 =for Pod::Coverage linestring multi_linestring multi_polygon polygon
 

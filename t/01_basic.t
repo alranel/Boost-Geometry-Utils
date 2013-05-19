@@ -3,14 +3,14 @@
 use strict;
 use warnings;
 
-use Test::More tests => 31;
+use Test::More tests => 32;
 use Boost::Geometry::Utils qw(polygon_multi_linestring_intersection
                               multi_polygon_multi_linestring_intersection
                               point_within_polygon point_covered_by_polygon
                               linestring_simplify multi_linestring_simplify
                               linestring_length polygon_centroid linestring_centroid
                               multi_linestring_centroid correct_polygon
-                              correct_multi_polygon
+                              correct_multi_polygon polygon_area
                               multi_linestring_multi_polygon_difference);
 
 {
@@ -31,6 +31,9 @@ use Boost::Geometry::Utils qw(polygon_multi_linestring_intersection
     my $linestring2 = [ [40, 15], [50, 15] ];  # external
     my $multilinestring = [ [ [5, 15], [30, 15] ], [ [40, 15], [50, 15] ] ];
     
+    {
+        is polygon_area([$square, $hole_in_square]), 10*10 - 2*2, 'polygon area';
+    }
     {
         my $intersection =
             polygon_multi_linestring_intersection($polygon, [$linestring]);

@@ -234,6 +234,15 @@ correct_multi_polygon(my_multi_polygon)
   OUTPUT:
     RETVAL
 
+double
+polygon_area(my_polygon)
+    polygon* my_polygon
+  CODE:
+    RETVAL = boost::geometry::area(*my_polygon);
+    delete my_polygon;
+  OUTPUT:
+    RETVAL
+
 SV*
 polygon_medial_axis(my_polygon)
     polygon* my_polygon
