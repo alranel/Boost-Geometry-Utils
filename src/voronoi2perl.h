@@ -292,9 +292,9 @@ medial_axis2perl(const VD &vd, const bool internal_only = true) {
   
 
   HV * result = newHV();
-  hv_store(result, "edges",    strlen("edges"),    newRV_noinc((SV*) edges_out), 0);
-  hv_store(result, "vertices", strlen("vertices"), newRV_noinc((SV*) vertices_out), 0);
-  hv_store(result, "events",   strlen("events"),   newSVpv(vd.event_log().c_str(), 0), 0);
+  (void)hv_store(result, "edges",    strlen("edges"),    newRV_noinc((SV*) edges_out), 0);
+  (void)hv_store(result, "vertices", strlen("vertices"), newRV_noinc((SV*) vertices_out), 0);
+  (void)hv_store(result, "events",   strlen("events"),   newSVpv(vd.event_log().c_str(), 0), 0);
 
   return newRV_noinc((SV*) result);
 
