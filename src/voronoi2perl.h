@@ -239,11 +239,16 @@ medial_axis2perl(const VD &vd, const bool internal_only = true) {
       AV* edgeavprev = thisToPrev[ep];
 
       /* debug notices */
+      /*
+            Line commented because they fail to compile under Windows with the following error:
+            src/voronoi2perl.h:242:76: error: cast from 'const edge_type* {aka const boost::
+            polygon::medial_axis_edge<double>*}' to 'long unsigned int' loses precision [-fp
+            ermissive]
       if (!edgeav    ) {printf("av     not def. ep: %lu\n",(unsigned long) ep);}
       if (!edgeavtwin) {printf("avtwin not def. ep: %lu\n",(unsigned long) ep);}
       if (!edgeavprev) {printf("avprev not def. ep: %lu\n",(unsigned long) ep);}
       if (!edgeavnext) {printf("avnext not def. ep: %lu\n",(unsigned long) ep);}
-
+        */
       if (edgeavtwin != NULL) {
         av_store(edgeav, 2, newRV_inc((SV*) edgeavtwin));
       }
