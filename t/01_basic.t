@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 32;
+use Test::More tests => 34;
 use Boost::Geometry::Utils qw(polygon_multi_linestring_intersection
                               multi_polygon_multi_linestring_intersection
                               point_within_polygon point_covered_by_polygon
@@ -64,7 +64,12 @@ use Boost::Geometry::Utils qw(polygon_multi_linestring_intersection
         is_deeply multi_polygon_multi_linestring_intersection([$polygon], $multilinestring),
             $expected, 'multiple linestring clipping against multiple polygons';
     }
-    
+    {
+        ok !eval { polygon_multi_linestring_intersection([$square], [[]]); 1 },
+            "croak on reading empty linestring";
+        is_deeply multi_polygon_multi_linestring_intersection([], []),
+            [], 'emtpy array of linestrings clipping against empty array of polygons';
+    }
     {
         my $expected = [
             [ [5,  15], [10, 15] ],

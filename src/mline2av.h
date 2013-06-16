@@ -53,18 +53,11 @@ void add_line(AV* theAv, multi_linestring* mls)
 multi_linestring*
 perl2multi_linestring(pTHX_ AV* theAv)
 {
-    
   const unsigned int len = av_len(theAv)+1;
-  SV** elem;
-  AV* innerav;
-  elem = av_fetch(theAv, 0, 0);
-  if (!SvROK(*elem)
-      || SvTYPE(SvRV(*elem)) != SVt_PVAV
-      || av_len((AV*)SvRV(*elem)) < 1) {
-    return NULL;
-  }
   multi_linestring* retval = new multi_linestring();
   
+  SV** elem;
+  AV* innerav;
   for (unsigned int i = 0; i < len; i++) {
     elem = av_fetch(theAv, i, 0);
     if (!SvROK(*elem)

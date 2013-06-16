@@ -27,16 +27,13 @@ perl2linestring(pTHX_ AV* theAv)
     using boost::geometry::make;
 
   const unsigned int len = av_len(theAv)+1;
-  SV** elem;
-  AV* innerav;
-  elem = av_fetch(theAv, 0, 0);
-  if (!SvROK(*elem)
-      || SvTYPE(SvRV(*elem)) != SVt_PVAV
-      || av_len((AV*)SvRV(*elem)) < 1) {
+  if (len == 0)
     return NULL;
-  }
+  
   linestring* retval = new linestring();
   
+  SV** elem;
+  AV* innerav;
   for (unsigned int i = 0; i < len; i++) {
     elem = av_fetch(theAv, i, 0);
     if (!SvROK(*elem)
