@@ -1,6 +1,6 @@
 package Boost::Geometry::Utils;
 {
-  $Boost::Geometry::Utils::VERSION = '0.13';
+  $Boost::Geometry::Utils::VERSION = '0.14';
 }
 # ABSTRACT: Bindings for the Boost Geometry library
 use strict;
