@@ -2,6 +2,10 @@
 Changes from 2012-03-31 00:00:00 +0000 to present.
 ==================================================
 
+-----------------------------------------
+version 0.15 at 2013-06-21
+-----------------------------------------
+
     - Added point_within_multi_polygon()
     - Added point_covered_by_multi_polygon()
 
