@@ -3,10 +3,11 @@
 use strict;
 use warnings;
 
-use Test::More tests => 34;
+use Test::More tests => 36;
 use Boost::Geometry::Utils qw(polygon_multi_linestring_intersection
                               multi_polygon_multi_linestring_intersection
                               point_within_polygon point_covered_by_polygon
+                              point_within_multi_polygon point_covered_by_multi_polygon
                               linestring_simplify multi_linestring_simplify
                               linestring_length polygon_centroid linestring_centroid
                               multi_linestring_centroid correct_polygon
@@ -100,6 +101,7 @@ use Boost::Geometry::Utils qw(polygon_multi_linestring_intersection
         my $point_on_edge = [10,15];
         my $point_on_hole_edge = [14,15];
         ok point_within_polygon($point_in, $polygon), 'point in polygon';
+        ok point_within_multi_polygon($point_in, [$polygon]), 'point in multipolygon';
         ok !point_within_polygon($point_out, $polygon), 'point outside polygon';
         ok !point_within_polygon($point_in_hole, $polygon),
             'point in hole in polygon';
@@ -111,6 +113,7 @@ use Boost::Geometry::Utils qw(polygon_multi_linestring_intersection
             'point on hole edge';
 
         ok point_covered_by_polygon($point_in, $polygon), 'point in polygon';
+        ok point_covered_by_multi_polygon($point_in, [$polygon]), 'point in multipolygon';
         ok !point_covered_by_polygon($point_out, $polygon),
             'point outside polygon';
         ok !point_covered_by_polygon($point_in_hole, $polygon),

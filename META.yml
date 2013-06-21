@@ -21,7 +21,7 @@ name: Boost-Geometry-Utils
 provides:
   Boost::Geometry::Utils:
     file: lib/Boost/Geometry/Utils.pm
-    version: 0.13
+    version: 0.14
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.13
+version: 0.14

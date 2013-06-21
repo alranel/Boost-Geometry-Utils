@@ -145,12 +145,34 @@ point_within_polygon(my_point_xy, my_polygon)
     RETVAL
 
 int
+point_within_multi_polygon(my_point_xy, my_multi_polygon)
+    point_xy* my_point_xy
+    multi_polygon* my_multi_polygon
+  CODE:
+    RETVAL = boost::geometry::within(*my_point_xy, *my_multi_polygon);
+    delete my_multi_polygon;
+    delete my_point_xy;
+  OUTPUT:
+    RETVAL
+
+int
 point_covered_by_polygon(my_point_xy, my_polygon)
     point_xy* my_point_xy
     polygon* my_polygon
   CODE:
     RETVAL = boost::geometry::covered_by(*my_point_xy, *my_polygon);
     delete my_polygon;
+    delete my_point_xy;
+  OUTPUT:
+    RETVAL
+
+int
+point_covered_by_multi_polygon(my_point_xy, my_multi_polygon)
+    point_xy* my_point_xy
+    multi_polygon* my_multi_polygon
+  CODE:
+    RETVAL = boost::geometry::covered_by(*my_point_xy, *my_multi_polygon);
+    delete my_multi_polygon;
     delete my_point_xy;
   OUTPUT:
     RETVAL

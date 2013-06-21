@@ -15,7 +15,9 @@ XSLoader::load('Boost::Geometry::Utils', $Boost::Geometry::Utils::VERSION);
 our @EXPORT_OK = qw(polygon_to_wkt linestring_to_wkt wkt_to_multilinestring
     polygon linestring polygon_linestring_intersection
     polygon_multi_linestring_intersection multi_polygon_multi_linestring_intersection
-    point_within_polygon point_covered_by_polygon linestring_simplify
+    point_within_polygon point_covered_by_polygon
+    point_within_multi_polygon point_covered_by_multi_polygon
+    linestring_simplify
     multi_linestring_simplify linestring_length polygon_centroid
     linestring_centroid multi_linestring_centroid multi_polygon
     correct_polygon correct_multi_polygon multi_linestring_multi_polygon_difference
@@ -157,10 +159,18 @@ the simplified linestrings.
 Accepts a point and an arrayref of points representing a polygon and returns true 
 or false according to the 'cover_by' strategy.
 
+=head2 point_covered_by_multi_polygon
+
+Same as above but accepts a multipolygon arrayref.
+
 =head2 point_within_polygon
 
 Accepts a point and an arrayref of points representing a polygon and returns true 
 or false according to the 'within' strategy.
+
+=head2 point_within_multi_polygon
+
+Same as above but accepts a multipolygon arrayref.
 
 =head2 linestring_length
 
