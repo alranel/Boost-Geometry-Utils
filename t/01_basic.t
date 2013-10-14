@@ -45,6 +45,14 @@ use Boost::Geometry::Utils qw(polygon_multi_linestring_intersection
     }
     {
         my $intersection =
+            polygon_multi_linestring_intersection($polygon, [[reverse @$linestring]]);
+        is_deeply $intersection, [
+            [ [20, 15], [16, 15] ],
+            [ [14, 15], [10, 15] ],
+        ], 'Reverse line is clipped to square with hole'; #this one gets rounding errors
+    }
+    {
+        my $intersection =
             polygon_multi_linestring_intersection($polygon, [$linestring2]);
         is_deeply $intersection, [], 'external line produces no intersections';
     }
